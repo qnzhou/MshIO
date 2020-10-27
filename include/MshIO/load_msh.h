@@ -3,6 +3,7 @@
 #include <MshIO/MshSpec.h>
 #include <MshIO/load_msh_format.h>
 #include <MshIO/load_msh_nodes.h>
+#include <MshIO/load_msh_elements.h>
 
 #include <cassert>
 #include <fstream>
@@ -10,9 +11,6 @@
 #include <string>
 
 namespace MshIO {
-
-void load_elements(std::istream& in, MshSpec& spec, std::ostream& log_out,
-                   std::ostream& log_err) {}
 
 void forward_to(std::istream& in, const std::string& flag) {
     std::string buf;

@@ -33,8 +33,7 @@ struct ElementBlock {
     int entity_tag;
     int element_type;
     size_t num_elements_in_block;
-    std::vector<size_t> tags;
-    std::vector<size_t> node_tags;
+    std::vector<size_t> data;
 };
 
 struct Elements {

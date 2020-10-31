@@ -11,7 +11,7 @@
 namespace MshIO {
 namespace v41 {
 
-void load_nodes_ascii(std::istream& in, MshSpec& spec, std::ostream& log_out, std::ostream& log_err)
+inline void load_nodes_ascii(std::istream& in, MshSpec& spec)
 {
     Nodes& nodes = spec.nodes;
     in >> nodes.num_entity_blocks;
@@ -46,8 +46,7 @@ void load_nodes_ascii(std::istream& in, MshSpec& spec, std::ostream& log_out, st
     }
 }
 
-void load_nodes_binary(
-    std::istream& in, MshSpec& spec, std::ostream& log_out, std::ostream& log_err)
+inline void load_nodes_binary(std::istream& in, MshSpec& spec)
 {
     Nodes& nodes = spec.nodes;
     eat_white_space(in);
@@ -83,7 +82,7 @@ void load_nodes_binary(
 
 namespace v22 {
 
-void load_nodes_ascii(std::istream& in, MshSpec& spec, std::ostream& log_out, std::ostream& log_err)
+inline void load_nodes_ascii(std::istream& in, MshSpec& spec)
 {
     Nodes& nodes = spec.nodes;
     nodes.num_entity_blocks = 1;
@@ -114,8 +113,7 @@ void load_nodes_ascii(std::istream& in, MshSpec& spec, std::ostream& log_out, st
     }
 }
 
-void load_nodes_binary(
-    std::istream& in, MshSpec& spec, std::ostream& log_out, std::ostream& log_err)
+inline void load_nodes_binary(std::istream& in, MshSpec& spec)
 {
     Nodes& nodes = spec.nodes;
     nodes.num_entity_blocks = 1;
@@ -150,23 +148,23 @@ void load_nodes_binary(
 
 } // namespace v22
 
-void load_nodes(std::istream& in, MshSpec& spec, std::ostream& log_out, std::ostream& log_err)
+inline void load_nodes(std::istream& in, MshSpec& spec)
 {
     const std::string& version = spec.mesh_format.version;
     const bool is_ascii = spec.mesh_format.file_type == 0;
     if (version == "4.1") {
         if (is_ascii)
-            v41::load_nodes_ascii(in, spec, log_out, log_err);
+            v41::load_nodes_ascii(in, spec);
         else
-            v41::load_nodes_binary(in, spec, log_out, log_err);
+            v41::load_nodes_binary(in, spec);
     } else if (version == "2.2") {
         if (is_ascii)
-            v22::load_nodes_ascii(in, spec, log_out, log_err);
+            v22::load_nodes_ascii(in, spec);
         else
-            v22::load_nodes_binary(in, spec, log_out, log_err);
+            v22::load_nodes_binary(in, spec);
     } else {
         std::stringstream msg;
-        msg << "Unsupported MSH version: " <<.version;
+        msg << "Unsupported MSH version: " << version;
         throw UnsupportedFeature(msg.str());
     }
 }

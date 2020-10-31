@@ -13,22 +13,34 @@
 
 namespace MshIO {
 
-size_t nodes_per_element(int element_type)
+inline void assert_element_is_supported(int element_type)
 {
-    // We support the first 15 element type so far.
-    constexpr size_t element_sizes[15] = {0, 2, 3, 4, 4, 8, 6, 5, 3, 6, 9, 10, 27, 18, 14};
     if (element_type <= 0 || element_type >= 15) {
         std::stringstream msg;
         msg << "Unsupported element type: " << element_type;
         throw UnsupportedFeature(msg.str());
     }
+}
+
+inline size_t nodes_per_element(int element_type)
+{
+    assert_element_is_supported(element_type);
+    // We support the first 15 element type so far.
+    constexpr size_t element_sizes[15] = {0, 2, 3, 4, 4, 8, 6, 5, 3, 6, 9, 10, 27, 18, 14};
     return element_sizes[element_type];
+}
+
+inline int get_element_dim(int element_type)
+{
+    assert_element_is_supported(element_type);
+    // We support the first 15 element type so far.
+    constexpr int element_dims[15] = {0, 1, 2, 2, 3, 3, 3, 3, 1, 2, 2, 3, 3, 3, 3};
+    return element_dims[element_type];
 }
 
 namespace v41 {
 
-void load_elements_ascii(
-    std::istream& in, MshSpec& spec, std::ostream& log_out, std::ostream& log_err)
+inline void load_elements_ascii(std::istream& in, MshSpec& spec)
 {
     Elements& elements = spec.elements;
     in >> elements.num_entity_blocks;
@@ -57,8 +69,7 @@ void load_elements_ascii(
     }
 }
 
-void load_elements_binary(
-    std::istream& in, MshSpec& spec, std::ostream& log_out, std::ostream& log_err)
+inline void load_elements_binary(std::istream& in, MshSpec& spec)
 {
     eat_white_space(in);
     Elements& elements = spec.elements;
@@ -87,8 +98,7 @@ void load_elements_binary(
 } // namespace v41
 
 namespace v22 {
-void load_elements_ascii(
-    std::istream& in, MshSpec& spec, std::ostream& log_out, std::ostream& log_err)
+inline void load_elements_ascii(std::istream& in, MshSpec& spec)
 {
     Elements& elements = spec.elements;
     in >> elements.num_elements;
@@ -122,7 +132,7 @@ void load_elements_ascii(
             std::min(elements.min_element_tag, static_cast<size_t>(element_num));
         elements.max_element_tag =
             std::max(elements.max_element_tag, static_cast<size_t>(element_num));
-        block.entity_dim = 3; // TODO: Not sure what it is for.
+        block.entity_dim = get_element_dim(element_type);
         block.entity_tag = 1;
         block.element_type = element_type;
         block.num_elements_in_block = 1;
@@ -135,8 +145,7 @@ void load_elements_ascii(
     }
 }
 
-void load_elements_binary(
-    std::istream& in, MshSpec& spec, std::ostream& log_out, std::ostream& log_err)
+inline void load_elements_binary(std::istream& in, MshSpec& spec)
 {
     Elements& elements = spec.elements;
     in >> elements.num_elements;
@@ -156,7 +165,7 @@ void load_elements_binary(
         in.read(reinterpret_cast<char*>(&num_element_in_block), 4);
         in.read(reinterpret_cast<char*>(&num_tags), 4);
 
-        block.entity_dim = 3; // TODO: check
+        block.entity_dim = get_element_dim(element_type);
         block.entity_tag = 1; // TODO: check
         block.element_type = static_cast<int>(element_type);
         block.num_elements_in_block = static_cast<size_t>(num_element_in_block);
@@ -193,20 +202,20 @@ void load_elements_binary(
 
 } // namespace v22
 
-void load_elements(std::istream& in, MshSpec& spec, std::ostream& log_out, std::ostream& log_err)
+inline void load_elements(std::istream& in, MshSpec& spec)
 {
     const std::string& version = spec.mesh_format.version;
     const bool is_ascii = spec.mesh_format.file_type == 0;
     if (version == "4.1") {
         if (is_ascii)
-            v41::load_elements_ascii(in, spec, log_out, log_err);
+            v41::load_elements_ascii(in, spec);
         else
-            v41::load_elements_binary(in, spec, log_out, log_err);
+            v41::load_elements_binary(in, spec);
     } else if (version == "2.2") {
         if (is_ascii)
-            v22::load_elements_ascii(in, spec, log_out, log_err);
+            v22::load_elements_ascii(in, spec);
         else
-            v22::load_elements_binary(in, spec, log_out, log_err);
+            v22::load_elements_binary(in, spec);
     } else {
         std::stringstream msg;
         msg << "Unsupported MSH version: " << version;

@@ -35,7 +35,8 @@ inline void load_nodes_ascii(std::istream& in, MshSpec& spec)
         assert(in.good());
 
         assert(block.parametric >= 0 && block.parametric <= 3);
-        const size_t entries_per_node = static_cast<size_t>(3 + block.parametric);
+        const size_t entries_per_node =
+            static_cast<size_t>(3 + ((block.parametric == 1) ? block.entity_dim : 0));
         block.data.resize(block.num_nodes_in_block * entries_per_node);
         for (size_t j = 0; j < block.num_nodes_in_block; j++) {
             for (size_t k = 0; k < entries_per_node; k++) {
@@ -69,7 +70,8 @@ inline void load_nodes_binary(std::istream& in, MshSpec& spec)
             static_cast<std::streamsize>(sizeof(size_t) * block.num_nodes_in_block));
         assert(in.good());
 
-        const size_t entries_per_node = static_cast<size_t>(3 + block.parametric);
+        const size_t entries_per_node =
+            static_cast<size_t>(3 + ((block.parametric == 1) ? block.entity_dim : 0));
         block.data.resize(block.num_nodes_in_block * entries_per_node);
         in.read(reinterpret_cast<char*>(block.data.data()),
             static_cast<std::streamsize>(

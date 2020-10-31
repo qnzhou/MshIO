@@ -11,7 +11,7 @@
 
 namespace MshIO {
 
-void load_mesh_format(std::istream& in, MshSpec& spec)
+inline void load_mesh_format(std::istream& in, MshSpec& spec)
 {
     MeshFormat& format = spec.mesh_format;
     in >> format.version;

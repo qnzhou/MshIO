@@ -1,4 +1,5 @@
 #include <MshIO/load_msh.h>
+#include <MshIO/save_msh.h>
 #include <iostream>
 
 int main(int argc, char** argv)
@@ -53,5 +54,8 @@ int main(int argc, char** argv)
             std::cout << std::endl;
         }
     }
+
+    MshIO::save_msh("tmp.msh", spec);
+
     return 0;
 }

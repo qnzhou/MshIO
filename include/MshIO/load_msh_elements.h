@@ -53,6 +53,7 @@ void load_elements_ascii(std::istream& in, MshSpec& spec, std::ostream& log_out,
 
 void load_elements_binary(std::istream& in, MshSpec& spec, std::ostream& log_out,
                       std::ostream& log_err) {
+    eat_white_space(in);
     Elements& elements = spec.elements;
     in.read(reinterpret_cast<char*>(&elements.num_entity_blocks), sizeof(size_t));
     in.read(reinterpret_cast<char*>(&elements.num_elements), sizeof(size_t));

@@ -5,13 +5,15 @@
 
 namespace MshIO {
 
-struct MeshFormat {
+struct MeshFormat
+{
     std::string version;
     int file_type;
     int data_size;
 };
 
-struct NodeBlock {
+struct NodeBlock
+{
     int entity_dim;
     int entity_tag;
     int parametric;
@@ -20,7 +22,8 @@ struct NodeBlock {
     std::vector<double> data;
 };
 
-struct Nodes {
+struct Nodes
+{
     size_t num_entity_blocks;
     size_t total_num_nodes;
     size_t min_node_tag;
@@ -28,7 +31,8 @@ struct Nodes {
     std::vector<NodeBlock> entity_blocks;
 };
 
-struct ElementBlock {
+struct ElementBlock
+{
     int entity_dim;
     int entity_tag;
     int element_type;
@@ -36,7 +40,8 @@ struct ElementBlock {
     std::vector<size_t> data;
 };
 
-struct Elements {
+struct Elements
+{
     size_t num_entity_blocks;
     size_t num_elements;
     size_t min_element_tag;
@@ -44,10 +49,11 @@ struct Elements {
     std::vector<ElementBlock> entity_blocks;
 };
 
-struct MshSpec {
+struct MshSpec
+{
     MeshFormat mesh_format;
     Nodes nodes;
     Elements elements;
 };
 
-}  // namespace MshIO
+} // namespace MshIO

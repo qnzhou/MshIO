@@ -44,6 +44,8 @@ if (MSHIO_BUILD_TESTS)
     file(GLOB TEST_FILES "${PROJECT_SOURCE_DIR}/tests/*.cpp")
     add_executable(test_MshIO ${TEST_FILES})
     target_link_libraries(test_MshIO MshIO::MshIO Catch2::Catch2)
+    target_compile_definitions(test_MshIO PRIVATE
+        MSHIO_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
     catch_discover_tests(test_MshIO)
 
     if(NOT MSVC)

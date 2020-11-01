@@ -15,7 +15,7 @@ inline void load_nodes_ascii(std::istream& in, MshSpec& spec)
 {
     Nodes& nodes = spec.nodes;
     in >> nodes.num_entity_blocks;
-    in >> nodes.total_num_nodes;
+    in >> nodes.num_nodes;
     in >> nodes.min_node_tag;
     in >> nodes.max_node_tag;
     assert(in.good());
@@ -52,7 +52,7 @@ inline void load_nodes_binary(std::istream& in, MshSpec& spec)
     Nodes& nodes = spec.nodes;
     eat_white_space(in);
     in.read(reinterpret_cast<char*>(&nodes.num_entity_blocks), sizeof(size_t));
-    in.read(reinterpret_cast<char*>(&nodes.total_num_nodes), sizeof(size_t));
+    in.read(reinterpret_cast<char*>(&nodes.num_nodes), sizeof(size_t));
     in.read(reinterpret_cast<char*>(&nodes.min_node_tag), sizeof(size_t));
     in.read(reinterpret_cast<char*>(&nodes.max_node_tag), sizeof(size_t));
     assert(in.good());
@@ -90,7 +90,7 @@ inline void load_nodes_ascii(std::istream& in, MshSpec& spec)
     nodes.num_entity_blocks = 1;
     nodes.min_node_tag = std::numeric_limits<size_t>::max();
     nodes.max_node_tag = 0;
-    in >> nodes.total_num_nodes;
+    in >> nodes.num_nodes;
     assert(in.good());
     nodes.entity_blocks.resize(1);
 
@@ -98,7 +98,7 @@ inline void load_nodes_ascii(std::istream& in, MshSpec& spec)
     block.entity_dim = 3;
     block.entity_tag = 1;
     block.parametric = 0;
-    block.num_nodes_in_block = nodes.total_num_nodes;
+    block.num_nodes_in_block = nodes.num_nodes;
 
     block.tags.resize(block.num_nodes_in_block);
     block.data.resize(block.num_nodes_in_block * 3);
@@ -121,7 +121,7 @@ inline void load_nodes_binary(std::istream& in, MshSpec& spec)
     nodes.num_entity_blocks = 1;
     nodes.min_node_tag = std::numeric_limits<size_t>::max();
     nodes.max_node_tag = 0;
-    in >> nodes.total_num_nodes;
+    in >> nodes.num_nodes;
     assert(in.good());
     nodes.entity_blocks.resize(1);
 
@@ -129,7 +129,7 @@ inline void load_nodes_binary(std::istream& in, MshSpec& spec)
     block.entity_dim = 3;
     block.entity_tag = 1;
     block.parametric = 0;
-    block.num_nodes_in_block = nodes.total_num_nodes;
+    block.num_nodes_in_block = nodes.num_nodes;
 
     block.tags.resize(block.num_nodes_in_block);
     block.data.resize(block.num_nodes_in_block * 3);

@@ -25,7 +25,7 @@ struct NodeBlock
 struct Nodes
 {
     size_t num_entity_blocks=0;
-    size_t total_num_nodes=0;
+    size_t num_nodes=0;
     size_t min_node_tag=0;
     size_t max_node_tag=0;
     std::vector<NodeBlock> entity_blocks;

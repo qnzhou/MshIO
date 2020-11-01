@@ -14,7 +14,7 @@ int main(int argc, char** argv)
     std::cout << "sizeof(int): " << sizeof(int) << std::endl;
     std::cout << "sizeof(size_t) " << sizeof(size_t) << std::endl;
     std::cout << "sizeof(double) " << sizeof(double) << std::endl;
-    std::cout << "Num nodes: " << spec.nodes.total_num_nodes << std::endl;
+    std::cout << "Num nodes: " << spec.nodes.num_nodes << std::endl;
     std::cout << "Num node blocks: " << spec.nodes.num_entity_blocks << std::endl;
     std::cout << "min node tag: " << spec.nodes.min_node_tag << std::endl;
     std::cout << "max node tag: " << spec.nodes.max_node_tag << std::endl;

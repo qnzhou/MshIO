@@ -12,7 +12,7 @@ inline void save_nodes_ascii(std::ostream& out, const MshSpec& spec)
 {
     const Nodes& nodes = spec.nodes;
     out << nodes.num_entity_blocks << std::endl;
-    out << nodes.total_num_nodes << std::endl;
+    out << nodes.num_nodes << std::endl;
     out << nodes.min_node_tag << " " << nodes.max_node_tag << std::endl;
 
     for (size_t i = 0; i < nodes.num_entity_blocks; i++) {
@@ -41,7 +41,7 @@ inline void save_nodes_binary(std::ostream& out, const MshSpec& spec)
 {
     const Nodes& nodes = spec.nodes;
     out.write(reinterpret_cast<const char*>(&nodes.num_entity_blocks), sizeof(size_t));
-    out.write(reinterpret_cast<const char*>(&nodes.total_num_nodes), sizeof(size_t));
+    out.write(reinterpret_cast<const char*>(&nodes.num_nodes), sizeof(size_t));
     out.write(reinterpret_cast<const char*>(&nodes.min_node_tag), sizeof(size_t));
     out.write(reinterpret_cast<const char*>(&nodes.max_node_tag), sizeof(size_t));
 
@@ -70,7 +70,7 @@ namespace v22 {
 inline void save_nodes_ascii(std::ostream& out, const MshSpec& spec)
 {
     const Nodes& nodes = spec.nodes;
-    out << nodes.total_num_nodes << std::endl;
+    out << nodes.num_nodes << std::endl;
 
     for (const auto& block : nodes.entity_blocks) {
         const size_t entries_per_node =
@@ -86,7 +86,7 @@ inline void save_nodes_ascii(std::ostream& out, const MshSpec& spec)
 inline void save_nodes_binary(std::ostream& out, const MshSpec& spec)
 {
     const Nodes& nodes = spec.nodes;
-    out << nodes.total_num_nodes << std::endl;
+    out << nodes.num_nodes << std::endl;
 
     for (const auto& block : nodes.entity_blocks) {
         const size_t entries_per_node =

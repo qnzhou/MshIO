@@ -1,25 +1,42 @@
 #include <catch2/catch.hpp>
 #include <sstream>
 
-#include <MshIO/load_msh.h>
 #include <MshIO/MshSpec.h>
-#include "test_data.h"
+#include <MshIO/load_msh.h>
+#include <MshIO/validate_spec.h>
 
-TEST_CASE("Load", "[loader]") {
+TEST_CASE("Load", "[loader]")
+{
     using namespace MshIO;
-    SECTION("v2.2 ascii") {
+    SECTION("v2.2 ascii")
+    {
         MshSpec spec = load_msh(MSHIO_DATA_DIR "/test_2.2_ascii.msh");
+        validate_spec(spec);
+        REQUIRE(spec.nodes.num_nodes == 6);
+        REQUIRE(spec.elements.num_elements == 2);
     }
 
-    SECTION("v2.2 binary") {
+    SECTION("v2.2 binary")
+    {
         MshSpec spec = load_msh(MSHIO_DATA_DIR "/test_2.2_bin.msh");
+        validate_spec(spec);
+        REQUIRE(spec.nodes.num_nodes == 6);
+        REQUIRE(spec.elements.num_elements == 2);
     }
 
-    SECTION("v4.1 ascii") {
+    SECTION("v4.1 ascii")
+    {
         MshSpec spec = load_msh(MSHIO_DATA_DIR "/test_4.1_ascii.msh");
+        validate_spec(spec);
+        REQUIRE(spec.nodes.num_nodes == 6);
+        REQUIRE(spec.elements.num_elements == 2);
     }
 
-    SECTION("v4.1 binary") {
+    SECTION("v4.1 binary")
+    {
         MshSpec spec = load_msh(MSHIO_DATA_DIR "/test_4.1_bin.msh");
+        validate_spec(spec);
+        REQUIRE(spec.nodes.num_nodes == 6);
+        REQUIRE(spec.elements.num_elements == 2);
     }
 }

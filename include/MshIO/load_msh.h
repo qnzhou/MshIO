@@ -4,6 +4,7 @@
 #include <MshIO/load_msh_elements.h>
 #include <MshIO/load_msh_format.h>
 #include <MshIO/load_msh_nodes.h>
+#include <MshIO/load_msh_data.h>
 
 #include <cassert>
 #include <fstream>
@@ -36,6 +37,10 @@ inline MshSpec load_msh(std::istream& in)
             load_nodes(in, spec);
         } else if (buf == "$Elements") {
             load_elements(in, spec);
+        } else if (buf == "$NodeData") {
+            load_node_data(in, spec);
+        } else if (buf == "$ElementData") {
+            load_element_data(in, spec);
         } else {
             std::cerr << "Warning: skipping section \"" << buf << "\"" << std::endl;
         }

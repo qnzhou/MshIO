@@ -49,11 +49,36 @@ struct Elements
     std::vector<ElementBlock> entity_blocks;
 };
 
+struct DataHeader
+{
+    std::vector<std::string> string_tags; // [view name, <interpolation scheeme>]
+    std::vector<double> real_tags; // [time value]
+    std::vector<int> int_tags; // [time step, num fields, num entities, partition id]
+};
+
+struct Data
+{
+    DataHeader header;
+    std::vector<size_t> tags;
+    std::vector<double> data;
+};
+
+struct ElementNodeData : public Data
+{
+    using Data::header;
+    using Data::tags;
+    using Data::data;
+    std::vector<int> num_nodes_per_element;
+};
+
 struct MshSpec
 {
     MeshFormat mesh_format;
     Nodes nodes;
     Elements elements;
+    std::vector<Data> node_data;
+    std::vector<Data> element_data;
+    std::vector<ElementNodeData> element_node_data;
 };
 
 } // namespace MshIO

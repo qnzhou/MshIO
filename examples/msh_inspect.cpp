@@ -55,6 +55,50 @@ int main(int argc, char** argv)
         }
     }
 
+    auto print_data = [](const MshIO::Data& data) {
+        std::cout << "Num string tags: " << data.header.string_tags.size() << std::endl;
+        for (const std::string& tag : data.header.string_tags) {
+            std::cout << std::quoted(tag) << " ";
+        }
+        std::cout << std::endl;
+
+        std::cout << "Num real tags: " << data.header.real_tags.size() << std::endl;
+        for (const double& tag : data.header.real_tags) {
+            std::cout << tag << " ";
+        }
+        std::cout << std::endl;
+
+        std::cout << "Num int tags: " << data.header.int_tags.size() << std::endl;
+        for (const double& tag : data.header.int_tags) {
+            std::cout << tag << " ";
+        }
+        std::cout << std::endl;
+
+        size_t fields_per_entity = static_cast<size_t>(data.header.int_tags[1]);
+        size_t num_entities = static_cast<size_t>(data.header.int_tags[2]);
+        for (size_t i = 0; i < num_entities; i++) {
+            std::cout << "  " << data.tags[i] << ": ";
+            for (size_t j = 0; j < fields_per_entity; j++) {
+                std::cout << data.data[i * fields_per_entity + j] << " ";
+            }
+            std::cout << std::endl;
+        }
+    };
+
+    if (spec.node_data.size() > 0) {
+        std::cout << "Node data: " << std::endl;
+        for (const MshIO::Data& data : spec.node_data) {
+            print_data(data);
+        }
+    }
+
+    if (spec.element_data.size() > 0) {
+        std::cout << "Element data: " << std::endl;
+        for (const MshIO::Data& data : spec.element_data) {
+            print_data(data);
+        }
+    }
+
     MshIO::save_msh("tmp.msh", spec);
 
     return 0;

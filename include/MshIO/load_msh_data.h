@@ -11,6 +11,8 @@
 
 namespace mshio {
 
+namespace internal {
+
 inline void load_data_header(std::istream& in, DataHeader& header)
 {
     size_t num_string_tags, num_real_tags, num_int_tags;
@@ -36,7 +38,7 @@ inline void load_data_header(std::istream& in, DataHeader& header)
 }
 
 namespace v41 {
-void load_data_entry(
+inline void load_data_entry(
     std::istream& in, DataEntry& entry, size_t fields_per_entry, bool is_element_node_data)
 {
     in.read(reinterpret_cast<char*>(&entry.tag), sizeof(size_t));
@@ -52,7 +54,7 @@ void load_data_entry(
 } // namespace v41
 
 namespace v22 {
-void load_data_entry(
+inline void load_data_entry(
     std::istream& in, DataEntry& entry, size_t fields_per_entry, bool is_element_node_data)
 {
     int32_t tag_32;
@@ -113,13 +115,15 @@ inline void load_data(std::istream& in,
     assert(in.good());
 }
 
+} // namespace internal
+
 
 inline void load_node_data(std::istream& in, MshSpec& spec)
 {
     const std::string& version = spec.mesh_format.version;
     bool is_binary = spec.mesh_format.file_type > 0;
     spec.node_data.emplace_back();
-    load_data(in, spec.node_data.back(), version, is_binary, false);
+    internal::load_data(in, spec.node_data.back(), version, is_binary, false);
 }
 
 inline void load_element_data(std::istream& in, MshSpec& spec)
@@ -127,16 +131,15 @@ inline void load_element_data(std::istream& in, MshSpec& spec)
     const std::string& version = spec.mesh_format.version;
     bool is_binary = spec.mesh_format.file_type > 0;
     spec.element_data.emplace_back();
-    load_data(in, spec.element_data.back(), version, is_binary, false);
+    internal::load_data(in, spec.element_data.back(), version, is_binary, false);
 }
 
 inline void load_element_node_data(std::istream& in, MshSpec& spec)
 {
     const std::string& version = spec.mesh_format.version;
     bool is_binary = spec.mesh_format.file_type > 0;
-    spec.element_data.emplace_back();
-    load_data(in, spec.element_data.back(), version, is_binary, true);
+    spec.element_node_data.emplace_back();
+    internal::load_data(in, spec.element_node_data.back(), version, is_binary, true);
 }
-
 
 } // namespace mshio

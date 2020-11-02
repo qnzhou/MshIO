@@ -1,9 +1,10 @@
 #pragma once
 
 #include <MshIO/MshSpec.h>
+#include <MshIO/save_msh_data.h>
+#include <MshIO/save_msh_elements.h>
 #include <MshIO/save_msh_format.h>
 #include <MshIO/save_msh_nodes.h>
-#include <MshIO/save_msh_elements.h>
 
 #include <cassert>
 #include <fstream>
@@ -18,6 +19,15 @@ inline void save_msh(std::ostream& out, const MshSpec& spec)
     }
     if (spec.elements.num_elements > 0) {
         save_elements(out, spec);
+    }
+    if (spec.node_data.size() > 0) {
+        save_node_data(out, spec);
+    }
+    if (spec.element_data.size() > 0) {
+        save_element_data(out, spec);
+    }
+    if (spec.element_node_data.size() > 0) {
+        save_element_node_data(out, spec);
     }
 }
 

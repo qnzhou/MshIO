@@ -1,5 +1,4 @@
-#include <MshIO/load_msh.h>
-#include <MshIO/save_msh.h>
+#include <MshIO/mshio.h>
 #include <iostream>
 
 int main(int argc, char** argv)

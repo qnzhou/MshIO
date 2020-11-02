@@ -92,8 +92,8 @@ inline void save_nodes_binary(std::ostream& out, const MshSpec& spec)
         const size_t entries_per_node =
             static_cast<size_t>(3 + ((block.parametric == 1) ? block.entity_dim : 0));
         for (size_t i = 0; i < block.num_nodes_in_block; i++) {
-            const int node_id = block.tags[i];
-            out.write(reinterpret_cast<const char*>(&node_id), sizeof(int));
+            const int32_t node_id = static_cast<int32_t>(block.tags[i]);
+            out.write(reinterpret_cast<const char*>(&node_id), 4);
             out.write(reinterpret_cast<const char*>(block.data.data() + i * entries_per_node),
                 static_cast<std::streamsize>(sizeof(double) * 3));
         }

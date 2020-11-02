@@ -1,9 +1,7 @@
 #include <catch2/catch.hpp>
 #include <sstream>
 
-#include <MshIO/MshSpec.h>
-#include <MshIO/load_msh.h>
-#include <MshIO/validate_spec.h>
+#include <MshIO/mshio.h>
 
 TEST_CASE("Load", "[loader]")
 {

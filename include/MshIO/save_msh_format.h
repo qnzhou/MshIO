@@ -4,7 +4,7 @@
 
 #include <ostream>
 
-namespace MshIO {
+namespace mshio {
 
 inline void save_mesh_format(std::ostream& out, const MshSpec& spec)
 {
@@ -18,4 +18,4 @@ inline void save_mesh_format(std::ostream& out, const MshSpec& spec)
     out << "$EndMeshFormat" << std::endl;
 }
 
-} // namespace MshIO
+} // namespace mshio

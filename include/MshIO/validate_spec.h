@@ -5,7 +5,7 @@
 
 #include <string>
 
-namespace MshIO {
+namespace mshio {
 
 void validate_spec(const MshSpec& spec)
 {
@@ -60,4 +60,4 @@ void validate_spec(const MshSpec& spec)
     }
 }
 
-} // namespace MshIO
+} // namespace mshio

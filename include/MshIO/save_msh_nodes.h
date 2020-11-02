@@ -5,7 +5,7 @@
 #include <cassert>
 #include <ostream>
 
-namespace MshIO {
+namespace mshio {
 namespace v41 {
 
 inline void save_nodes_ascii(std::ostream& out, const MshSpec& spec)
@@ -126,4 +126,4 @@ inline void save_nodes(std::ostream& out, const MshSpec& spec)
     out << "$EndNodes" << std::endl;
 }
 
-} // namespace MshIO
+} // namespace mshio

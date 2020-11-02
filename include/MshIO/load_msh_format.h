@@ -9,7 +9,7 @@
 #include <sstream>
 #include <string>
 
-namespace MshIO {
+namespace mshio {
 
 inline void load_mesh_format(std::istream& in, MshSpec& spec)
 {
@@ -43,4 +43,4 @@ inline void load_mesh_format(std::istream& in, MshSpec& spec)
     }
 }
 
-} // namespace MshIO
+} // namespace mshio

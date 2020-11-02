@@ -8,7 +8,7 @@
 #include <cassert>
 #include <fstream>
 
-namespace MshIO {
+namespace mshio {
 
 inline void save_msh(std::ostream& out, const MshSpec& spec)
 {
@@ -28,4 +28,4 @@ inline void save_msh(const std::string& filename, const MshSpec& spec)
     save_msh(fout, spec);
 }
 
-} // namespace MshIO
+} // namespace mshio

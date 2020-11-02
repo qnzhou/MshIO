@@ -9,7 +9,7 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    MshIO::MshSpec spec = MshIO::load_msh(argv[1]);
+    mshio::MshSpec spec = mshio::load_msh(argv[1]);
 
     std::cout << "sizeof(int): " << sizeof(int) << std::endl;
     std::cout << "sizeof(size_t) " << sizeof(size_t) << std::endl;
@@ -20,7 +20,7 @@ int main(int argc, char** argv)
     std::cout << "max node tag: " << spec.nodes.max_node_tag << std::endl;
 
     for (size_t i = 0; i < spec.nodes.num_entity_blocks; i++) {
-        MshIO::NodeBlock& block = spec.nodes.entity_blocks[i];
+        mshio::NodeBlock& block = spec.nodes.entity_blocks[i];
         std::cout << "  entity dim: " << block.entity_dim << std::endl;
         std::cout << "  entity tag: " << block.entity_tag << std::endl;
         std::cout << "  parametric: " << block.parametric << std::endl;
@@ -39,13 +39,13 @@ int main(int argc, char** argv)
     std::cout << "min element tag: " << spec.elements.min_element_tag << std::endl;
     std::cout << "max element tag: " << spec.elements.max_element_tag << std::endl;
     for (size_t i = 0; i < spec.elements.num_entity_blocks; i++) {
-        MshIO::ElementBlock& block = spec.elements.entity_blocks[i];
+        mshio::ElementBlock& block = spec.elements.entity_blocks[i];
         std::cout << "  entity dim: " << block.entity_dim << std::endl;
         std::cout << "  entity tag: " << block.entity_tag << std::endl;
         std::cout << "  entity type: " << block.element_type << std::endl;
         std::cout << "  num elements in block: " << block.num_elements_in_block << std::endl;
 
-        const size_t n = MshIO::nodes_per_element(block.element_type);
+        const size_t n = mshio::nodes_per_element(block.element_type);
         for (size_t j = 0; j < block.num_elements_in_block; j++) {
             std::cout << "    " << block.data[j * (n + 1)] << ": ";
             for (size_t k = 1; k <= n; k++) {
@@ -55,7 +55,7 @@ int main(int argc, char** argv)
         }
     }
 
-    auto print_data = [](const MshIO::Data& data) {
+    auto print_data = [](const mshio::Data& data) {
         std::cout << "Num string tags: " << data.header.string_tags.size() << std::endl;
         for (const std::string& tag : data.header.string_tags) {
             std::cout << std::quoted(tag) << " ";
@@ -77,9 +77,10 @@ int main(int argc, char** argv)
         size_t fields_per_entity = static_cast<size_t>(data.header.int_tags[1]);
         size_t num_entities = static_cast<size_t>(data.header.int_tags[2]);
         for (size_t i = 0; i < num_entities; i++) {
-            std::cout << "  " << data.tags[i] << ": ";
+            const mshio::DataEntry& entry = data.entries[i];
+            std::cout << "  " << entry.tag << ": ";
             for (size_t j = 0; j < fields_per_entity; j++) {
-                std::cout << data.data[i * fields_per_entity + j] << " ";
+                std::cout << entry.data[j] << " ";
             }
             std::cout << std::endl;
         }
@@ -87,19 +88,19 @@ int main(int argc, char** argv)
 
     if (spec.node_data.size() > 0) {
         std::cout << "Node data: " << std::endl;
-        for (const MshIO::Data& data : spec.node_data) {
+        for (const mshio::Data& data : spec.node_data) {
             print_data(data);
         }
     }
 
     if (spec.element_data.size() > 0) {
         std::cout << "Element data: " << std::endl;
-        for (const MshIO::Data& data : spec.element_data) {
+        for (const mshio::Data& data : spec.element_data) {
             print_data(data);
         }
     }
 
-    MshIO::save_msh("tmp.msh", spec);
+    mshio::save_msh("tmp.msh", spec);
 
     return 0;
 }

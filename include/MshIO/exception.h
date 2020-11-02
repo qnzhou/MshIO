@@ -3,7 +3,7 @@
 #include <exception>
 #include <string>
 
-namespace MshIO {
+namespace mshio {
 
 struct InvalidFormat : public std::exception
 {
@@ -44,4 +44,4 @@ private:
     std::string m_message;
 };
 
-} // namespace MshIO
+} // namespace mshio

@@ -7,7 +7,7 @@
 
 TEST_CASE("Load", "[loader]")
 {
-    using namespace MshIO;
+    using namespace mshio;
     SECTION("v2.2 ascii")
     {
         MshSpec spec = load_msh(MSHIO_DATA_DIR "/test_2.2_ascii.msh");

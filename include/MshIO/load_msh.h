@@ -1,17 +1,17 @@
 #pragma once
 
 #include <MshIO/MshSpec.h>
+#include <MshIO/load_msh_data.h>
 #include <MshIO/load_msh_elements.h>
 #include <MshIO/load_msh_format.h>
 #include <MshIO/load_msh_nodes.h>
-#include <MshIO/load_msh_data.h>
 
 #include <cassert>
 #include <fstream>
 #include <iostream>
 #include <string>
 
-namespace MshIO {
+namespace mshio {
 
 inline void forward_to(std::istream& in, const std::string& flag)
 {
@@ -41,6 +41,8 @@ inline MshSpec load_msh(std::istream& in)
             load_node_data(in, spec);
         } else if (buf == "$ElementData") {
             load_element_data(in, spec);
+        } else if (buf == "$ElementNodeData") {
+            load_element_node_data(in, spec);
         } else {
             std::cerr << "Warning: skipping section \"" << buf << "\"" << std::endl;
         }
@@ -57,4 +59,4 @@ inline MshSpec load_msh(const std::string& filename)
     return load_msh(fin);
 }
 
-} // namespace MshIO
+} // namespace mshio

@@ -8,7 +8,7 @@
 #include <fstream>
 #include <string>
 
-namespace MshIO {
+namespace mshio {
 namespace v41 {
 
 inline void load_nodes_ascii(std::istream& in, MshSpec& spec)
@@ -171,4 +171,4 @@ inline void load_nodes(std::istream& in, MshSpec& spec)
     }
 }
 
-} // namespace MshIO
+} // namespace mshio

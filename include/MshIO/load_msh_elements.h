@@ -1,9 +1,9 @@
 #pragma once
 
 #include <MshIO/MshSpec.h>
+#include <MshIO/element_utils.h>
 #include <MshIO/exception.h>
 #include <MshIO/io_utils.h>
-#include <MshIO/element_utils.h>
 
 #include <algorithm>
 #include <cassert>
@@ -12,7 +12,7 @@
 #include <string>
 
 
-namespace MshIO {
+namespace mshio {
 
 namespace v41 {
 
@@ -199,4 +199,4 @@ inline void load_elements(std::istream& in, MshSpec& spec)
     }
 }
 
-} // namespace MshIO
+} // namespace mshio

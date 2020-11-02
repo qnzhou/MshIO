@@ -12,7 +12,7 @@
 #include <string>
 
 
-namespace MshIO {
+namespace mshio {
 
 namespace v41 {
 
@@ -74,18 +74,18 @@ inline void save_elements_ascii(std::ostream& out, const MshSpec& spec)
 {
     const Elements& elements = spec.elements;
     out << elements.num_elements << std::endl;
-    for (size_t i=0; i<elements.num_entity_blocks; i++) {
+    for (size_t i = 0; i < elements.num_entity_blocks; i++) {
         const ElementBlock& block = elements.entity_blocks[i];
         int element_type = block.element_type;
         const size_t n = nodes_per_element(element_type);
         constexpr int num_tags = 1;
-        for (size_t j=0; j<block.num_elements_in_block; j++) {
-            size_t element_number = block.data[j*(n+1)];
-            out << element_number << " " << element_type << " " << num_tags
-                << " " << block.entity_tag << " ";
-            for (size_t k=0; k<n; k++) {
-                out << block.data[j*(n+1)+k+1];
-                if (k == n-1) {
+        for (size_t j = 0; j < block.num_elements_in_block; j++) {
+            size_t element_number = block.data[j * (n + 1)];
+            out << element_number << " " << element_type << " " << num_tags << " "
+                << block.entity_tag << " ";
+            for (size_t k = 0; k < n; k++) {
+                out << block.data[j * (n + 1) + k + 1];
+                if (k == n - 1) {
                     out << std::endl;
                 } else {
                     out << ' ';
@@ -95,11 +95,11 @@ inline void save_elements_ascii(std::ostream& out, const MshSpec& spec)
     }
 }
 
-inline void save_elements_binary(std::ostream& out, const MshSpec& spec) 
+inline void save_elements_binary(std::ostream& out, const MshSpec& spec)
 {
     const Elements& elements = spec.elements;
     out << elements.num_elements << std::endl;
-    for (size_t i=0; i<elements.num_entity_blocks; i++) {
+    for (size_t i = 0; i < elements.num_entity_blocks; i++) {
         const ElementBlock& block = elements.entity_blocks[i];
         const int32_t element_type = block.element_type;
         constexpr int32_t num_tags = 1;
@@ -111,12 +111,12 @@ inline void save_elements_binary(std::ostream& out, const MshSpec& spec)
         const size_t n = nodes_per_element(element_type);
         const int32_t tag = static_cast<int32_t>(block.entity_tag);
 
-        for (size_t j=0; j<block.num_elements_in_block; j++) {
-            const int32_t element_number = static_cast<int32_t>(block.data[j*(n+1)]);
+        for (size_t j = 0; j < block.num_elements_in_block; j++) {
+            const int32_t element_number = static_cast<int32_t>(block.data[j * (n + 1)]);
             out.write(reinterpret_cast<const char*>(&element_number), 4);
             out.write(reinterpret_cast<const char*>(&tag), 4);
-            for (size_t k=0; k<n; k++) {
-                const int32_t node_id = static_cast<int32_t>(block.data[j*(n+1)+k+1]);
+            for (size_t k = 0; k < n; k++) {
+                const int32_t node_id = static_cast<int32_t>(block.data[j * (n + 1) + k + 1]);
                 out.write(reinterpret_cast<const char*>(&node_id), 4);
             }
         }
@@ -149,4 +149,4 @@ inline void save_elements(std::ostream& out, const MshSpec& spec)
 }
 
 
-} // namespace MshIO
+} // namespace mshio

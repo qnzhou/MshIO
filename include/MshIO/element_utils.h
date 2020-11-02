@@ -4,7 +4,7 @@
 
 #include <sstream>
 
-namespace MshIO {
+namespace mshio {
 
 inline void assert_element_is_supported(int element_type)
 {
@@ -31,4 +31,4 @@ inline int get_element_dim(int element_type)
     return element_dims[element_type];
 }
 
-} // namespace MshIO
+} // namespace mshio

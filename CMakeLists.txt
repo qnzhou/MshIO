@@ -13,8 +13,8 @@ set(CMAKE_CXX_STANDARD 14)
 
 project(MshIO)
 
-option(MSHIO_BUILD_TESTS "Enalbe unit tests" On)
-option(MSHIO_BUILD_EXAMPLES "Enalbe examples" On)
+option(MSHIO_BUILD_TESTS "Enalbe unit tests" Off)
+option(MSHIO_BUILD_EXAMPLES "Enalbe examples" Off)
 
 include(FetchContent)
 include(cmake/sanitizer-cmake.cmake)

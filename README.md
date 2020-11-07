@@ -159,6 +159,7 @@ See the [supported element types](#Supported-element-types) table.
 The following types are supported by MshIO:
 
 | Type ID | Name | Dim | # nodes |
+|:--:|--|--|--|
 | 1 | 2-node line | 1 | 2 |
 | 2 | 3-node triangle | 2 | 3 |
 | 3 | 4-node quad | 2 | 4 |

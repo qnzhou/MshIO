@@ -23,10 +23,10 @@ stored in a MSH file.  Currently, the following sections are supported:
 |----:|---|
 | [Mesh format] | Format header. |
 | [Nodes] | 3D coordinates of nodes and (optionally) their parameterization coordinates. |
-| Elements | A list of elements grouped by blocks. |
-| Node data | Scalar/vector/tensor fields defined on nodes. |
-| Element data | Scalar/vector/tensor fields defined on elements. |
-| Element-node data | Scalar/vector/tensor fields defined over each node of each element. |
+| [Elements] | A list of elements grouped by blocks. |
+| [Node data] | Scalar/vector/tensor fields defined on nodes. |
+| [Element data] | Scalar/vector/tensor fields defined on elements. |
+| [Element-node data] | Scalar/vector/tensor fields defined over each node of each element. |
 
 The follow sections are supported by MSH format, but not yet supported by MshIO
 (contribution welcomed):
@@ -154,17 +154,71 @@ i.e. Each element entry consists of an element tag followed by `n` node tags,
 where `n` is the number of nodes corresponding determined by the element type.
 See the [supported element types](#Supported-element-types) table.
 
+### Post-processing data
+
+One of main advantage of MSH format is its support for storing post-processing
+data along with the mesh.  There are 3 types of post-processing data: node data,
+element data and element-node data.  Each type of post-processing data consists
+of a header and a `std::vector` of entires.
+
+```c++
+auto& node_data = spec.node_data[k];
+auto& element_data = spec.element_data[k];
+auto& element_node_data = spec.element_node_data[k];
+```
+
+#### Data header
+
+Data header consists of arrays of `string`, `double` and `int` tags.  Some tags
+has pre-defined meaning:
+
+```c++
+auto& header = node_data.header;
+header.string_tags = {...};  // [field_name, <interpolaiton_scheme>, ...]
+header.real_tags = {...};    // [<time value>, ...]
+header.int_tags = {...};     // [time step, num fields, num entities, <partition id>, ...]
+```
+
+Required special tags:
+* `string_tags[0]`: The name of the data.
+* `int_tags[0]`: Time step index, starting from 0.
+* `int_tags[1]`: The number of fields per data entry. 1 for scalar field, 3 for
+  vector field, and 9 for tensor field.
+* `int_tags[2]`: The number of data entries.
+
+#### Data entry
+
+Data entry describe the data associated with a target node or element or
+element-node.
+
+```c++
+auto& data_entries = node_data.entries;
+auto& entry = data_entires[k];
+
+entry.tag = 1; // The target node (for node data) or element tag (for element data).
+entry.data = {...}; // A std::vector of double data.
+```
+
+The `entry.data`'s size is determined in the header (i.e. `header.int_tags[1]`)
+for node and element data.
+
+For element-node data, `entry.tag` is the target element tag, and it has an
+extra field `entry.num_nodes_per_element` that determines the number of nodes in
+each element (this can be computed from element type using `nodes_per_element`
+method). The `entry.data` is of size `num_nodes_per_element` times the number of
+fields.
+
 ### Supported element types
 
 The following types are supported by MshIO:
 
 | Type ID | Name | Dim | # nodes |
-|:--:|--|--|--|
-| 1 | 2-node line | 1 | 2 |
-| 2 | 3-node triangle | 2 | 3 |
-| 3 | 4-node quad | 2 | 4 |
+|:-:|--------------------|---|---|
+| 1 | 2-node line        | 1 | 2 |
+| 2 | 3-node triangle    | 2 | 3 |
+| 3 | 4-node quad        | 2 | 4 |
 | 4 | 4-node tetrahedron | 3 | 4 |
-| 5 | 8-node hexahedron | 3 | 8 |
+| 5 | 8-node hexahedron  | 3 | 8 |
 
 TODO
 
@@ -173,3 +227,6 @@ TODO
 [Mesh format]: #Mesh-format
 [Nodes]: #Nodes
 [Elements]: #Elements
+[Node data]: #Post-processing-data
+[Element data]: #Post-processing-data
+[Element-node data]: #Post-processing-data

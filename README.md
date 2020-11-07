@@ -1,7 +1,7 @@
 # MshIO
 
 MshIO is a tiny library written with modern C++.  It is created by Qingnan Zhou
-as a coding excercise.  It supports reading and writing [MSH format] with both
+as a coding exercise.  It supports reading and writing [MSH format] with both
 ASCII and binary encodings.
 
 ## Usage
@@ -22,8 +22,8 @@ stored in a MSH file.  Currently, the following sections are supported:
 | Section name | Description |
 |----:|---|
 | [Mesh format] | Format header. |
-| [Nodes] | 3D coordinates of nodes and (optionally) their parameterization coordiantes. |
-| Elements | A list of elements groupped by blocks. |
+| [Nodes] | 3D coordinates of nodes and (optionally) their parameterization coordinates. |
+| Elements | A list of elements grouped by blocks. |
 | Node data | Scalar/vector/tensor fields defined on nodes. |
 | Element data | Scalar/vector/tensor fields defined on elements. |
 | Element-node data | Scalar/vector/tensor fields defined over each node of each element. |
@@ -45,7 +45,7 @@ valid.
 
 ### Mesh format
 
-Mesh format section is the header of MSH file.  It constains information about
+Mesh format section is the header of MSH file.  It contains information about
 the MSH version used, whether the file is binary and data size.  This section is
 required.
 
@@ -60,7 +60,9 @@ format.data_size = sizeof(size_t); // Size of data, defined as sizeof(size_t) = 
 
 Nodes are grouped into node blocks in MSH format.  Each node has a unique "tag",
 and the tag is used for referring to this node in other sections.  All tags are
-positive.
+positive.  Ideally, tags should be ordered consecutively from 1 to N (the number
+of nodes), but it does not have to be so.  It is up to the client application to
+maintain a mapping from tag to nodes.
 
 ```c++
 auto& nodes = spec.nodes;
@@ -76,21 +78,97 @@ nodes.entity_blocks = ...;     // A std::vector of node blocks.
 A node block is simply a group of nodes.
 
 ```c++
-auto& block = nodes.entity_blocks[i];
+auto& block = nodes.entity_blocks[k];
 block.entity_dim = 3;          // The dimension of the entity.
 block.entity_tag = 1;          // The entity these nodes belongs to.
 block.parametric = 0;          // 0: non-parametric, 1: parametric.
 block.num_nodes_in_block = 3;  // The number of nodes in block.
-block.tags = ...;              // A std::vector of node tags.
+block.tags = ...;              // A std::vector of unique, positive node tags.
 block.data = ...;              // A std::vector of coordinates (x,y,z,<u>,<v>,<w>,...)
 ```
 
 When `block.parametric` is `1`, `block.data` contains the parametric coordinates
 in addition to the XYZ coordinates.  The dimension of the parametric coordinates
-is defined by `block.entity_dim` varible.
+is defined by `block.entity_dim` variable.
 
+### Elements
+
+Elements are grouped into element blocks.  Each element has a unique positive
+"tag".  Ideally, tags should be ordered consecutively from 1 to M (the number of
+elements), but it does not have not be so.  It is up to the client application
+to maintain a mapping from tag to elements.
+
+```c++
+auto& elements = spec.elements;
+elements.num_entity_blocks = 1;  // Number of element blocks.
+elements.num_elements = 12;      // Total number of elmeents.
+elements.min_element_tag = 1;
+elements.max_element_tag = 12;
+elements.entity_blocks = ...;    // A std::vector of element blocks.
+```
+
+#### Element block
+
+An element block is a set of elements of the same type:
+
+```c++
+auto& block = elements.entity_blocks[k];
+block.entity_dim = 2;             // The dimension of the elements.
+block.entity_tag = 1;             // The entity these elements belongs to.
+block.element_type = 2;           // See element type table below.
+block.num_elements_in_block = 12; // The number of elements in this block.
+block.data = ...;                 // See more detail below.
+```
+
+#### Element types
+
+MSH format supports a large set of finite element types.  Element types
+determines the dimension of the element as well as the number of nodes that make
+up the element.
+
+```c++
+int element_type = ...;  // Element type is encoded as an int.
+
+// To look up the number of nodes for this element type:
+size_t n = nodes_per_element(element_type);
+
+// To look up the dimension of the element:
+int dim = get_element_dim(element_type);
+```
+
+See all supported element types [here](#Supported-element-types).
+
+
+#### Element data
+
+The element data is a flattened `std::vector` of `size_t`.  It follows the
+convention below:
+
+```
+element_tag node_tag ... node_tag
+element_tag node_tag ... node_tag
+...
+```
+
+i.e. Each element entry consists of an element tag followed by `n` node tags,
+where `n` is the number of nodes corresponding determined by the element type.
+See the [supported element types](#Supported-element-types) table.
+
+### Supported element types
+
+The following types are supported by MshIO:
+
+| Type ID | Name | Dim | # nodes |
+| 1 | 2-node line | 1 | 2 |
+| 2 | 3-node triangle | 2 | 3 |
+| 3 | 4-node quad | 2 | 4 |
+| 4 | 4-node tetrahedron | 3 | 4 |
+| 5 | 8-node hexahedron | 3 | 8 |
+
+TODO
 
 
 [MSH format]: https://gmsh.info/doc/texinfo/gmsh.html#MSH-file-format
 [Mesh format]: #Mesh-format
 [Nodes]: #Nodes
+[Elements]: #Elements

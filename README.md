@@ -21,8 +21,8 @@ stored in a MSH file.  Currently, the following sections are supported:
 
 | Section name | Description |
 |----:|---|
-| Mesh format | Format header. |
-| Nodes | 3D coordinates of nodes and (optionally) their parameterization coordiantes. |
+| [Mesh format] | Format header. |
+| [Nodes] | 3D coordinates of nodes and (optionally) their parameterization coordiantes. |
 | Elements | A list of elements groupped by blocks. |
 | Node data | Scalar/vector/tensor fields defined on nodes. |
 | Element data | Scalar/vector/tensor fields defined on elements. |
@@ -77,12 +77,12 @@ A node block is simply a group of nodes.
 
 ```c++
 auto& block = nodes.entity_blocks[i];
-block.entity_dim = 3;  // The dimension of the entity.
-block.entity_tag = 1;  // The entity these nodes belongs to.
-block.parametric = 0;  // 0: non-parametric, 1: parametric.
-block.num_nodes_in_block = 3; // The number of nodes in block.
-block.tags = ...;      // A vector of node tags.
-block.data = ...;      // A vector of coordinates (x,y,z,<u>,<v>,<w>,...)
+block.entity_dim = 3;          // The dimension of the entity.
+block.entity_tag = 1;          // The entity these nodes belongs to.
+block.parametric = 0;          // 0: non-parametric, 1: parametric.
+block.num_nodes_in_block = 3;  // The number of nodes in block.
+block.tags = ...;              // A std::vector of node tags.
+block.data = ...;              // A std::vector of coordinates (x,y,z,<u>,<v>,<w>,...)
 ```
 
 When `block.parametric` is `1`, `block.data` contains the parametric coordinates
@@ -92,3 +92,5 @@ is defined by `block.entity_dim` varible.
 
 
 [MSH format]: https://gmsh.info/doc/texinfo/gmsh.html#MSH-file-format
+[Mesh format]: #Mesh-format
+[Nodes]: #Nodes

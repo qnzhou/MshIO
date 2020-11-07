@@ -1,5 +1,3 @@
-#pragma once
-
 #include <MshIO/MshSpec.h>
 #include <MshIO/exception.h>
 

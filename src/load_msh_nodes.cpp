@@ -1,17 +1,19 @@
-#pragma once
+#include "load_msh_nodes.h"
+#include "io_utils.h"
 
 #include <MshIO/MshSpec.h>
-#include <MshIO/io_utils.h>
+#include <MshIO/exception.h>
 
 #include <algorithm>
 #include <cassert>
 #include <fstream>
 #include <string>
+#include <sstream>
 
 namespace mshio {
 namespace v41 {
 
-inline void load_nodes_ascii(std::istream& in, MshSpec& spec)
+void load_nodes_ascii(std::istream& in, MshSpec& spec)
 {
     Nodes& nodes = spec.nodes;
     in >> nodes.num_entity_blocks;
@@ -47,7 +49,7 @@ inline void load_nodes_ascii(std::istream& in, MshSpec& spec)
     }
 }
 
-inline void load_nodes_binary(std::istream& in, MshSpec& spec)
+void load_nodes_binary(std::istream& in, MshSpec& spec)
 {
     Nodes& nodes = spec.nodes;
     eat_white_space(in);
@@ -84,7 +86,7 @@ inline void load_nodes_binary(std::istream& in, MshSpec& spec)
 
 namespace v22 {
 
-inline void load_nodes_ascii(std::istream& in, MshSpec& spec)
+void load_nodes_ascii(std::istream& in, MshSpec& spec)
 {
     Nodes& nodes = spec.nodes;
     nodes.num_entity_blocks = 1;
@@ -115,7 +117,7 @@ inline void load_nodes_ascii(std::istream& in, MshSpec& spec)
     }
 }
 
-inline void load_nodes_binary(std::istream& in, MshSpec& spec)
+void load_nodes_binary(std::istream& in, MshSpec& spec)
 {
     Nodes& nodes = spec.nodes;
     nodes.num_entity_blocks = 1;
@@ -150,7 +152,7 @@ inline void load_nodes_binary(std::istream& in, MshSpec& spec)
 
 } // namespace v22
 
-inline void load_nodes(std::istream& in, MshSpec& spec)
+void load_nodes(std::istream& in, MshSpec& spec)
 {
     const std::string& version = spec.mesh_format.version;
     const bool is_ascii = spec.mesh_format.file_type == 0;

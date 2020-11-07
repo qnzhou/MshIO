@@ -1,6 +1,7 @@
-#pragma once
+#include "save_msh_data.h"
 
 #include <MshIO/MshSpec.h>
+#include <MshIO/exception.h>
 
 #include <cassert>
 #include <iomanip>
@@ -11,7 +12,7 @@ namespace mshio {
 
 namespace internal {
 
-inline void save_data(std::ostream& out,
+void save_data(std::ostream& out,
     const Data& data,
     const std::string& version,
     bool is_binary,
@@ -78,7 +79,7 @@ inline void save_data(std::ostream& out,
 
 } // namespace internal
 
-inline void save_node_data(std::ostream& out, const MshSpec& spec)
+void save_node_data(std::ostream& out, const MshSpec& spec)
 {
     const std::string& version = spec.mesh_format.version;
     bool is_binary = spec.mesh_format.file_type > 0;
@@ -90,7 +91,7 @@ inline void save_node_data(std::ostream& out, const MshSpec& spec)
     }
 }
 
-inline void save_element_data(std::ostream& out, const MshSpec& spec)
+void save_element_data(std::ostream& out, const MshSpec& spec)
 {
     const std::string& version = spec.mesh_format.version;
     bool is_binary = spec.mesh_format.file_type > 0;
@@ -102,7 +103,7 @@ inline void save_element_data(std::ostream& out, const MshSpec& spec)
     }
 }
 
-inline void save_element_node_data(std::ostream& out, const MshSpec& spec)
+void save_element_node_data(std::ostream& out, const MshSpec& spec)
 {
     const std::string& version = spec.mesh_format.version;
     bool is_binary = spec.mesh_format.file_type > 0;
@@ -113,6 +114,5 @@ inline void save_element_node_data(std::ostream& out, const MshSpec& spec)
         out << "$EndElementNodeData" << std::endl;
     }
 }
-
 
 } // namespace mshio

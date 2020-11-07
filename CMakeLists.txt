@@ -24,10 +24,9 @@ file(GLOB INC_FILES "${PROJECT_SOURCE_DIR}/include/MshIO/*.h")
 file(GLOB SRC_FILES "${PROJECT_SOURCE_DIR}/src/*.cpp")
 
 
-add_library(MshIO INTERFACE)
-target_include_directories(MshIO INTERFACE
-    ${PROJECT_SOURCE_DIR}/include)
-add_library(MshIO::MshIO ALIAS MshIO)
+add_library(mshio STATIC ${SRC_FILES})
+target_include_directories(mshio PUBLIC ${PROJECT_SOURCE_DIR}/include)
+add_library(MshIO::MshIO ALIAS mshio)
 
 
 if (MSHIO_BUILD_EXAMPLES)

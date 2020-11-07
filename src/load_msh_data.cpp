@@ -1,8 +1,8 @@
-#pragma once
+#include "load_msh_data.h"
 
 #include <MshIO/MshSpec.h>
 #include <MshIO/exception.h>
-#include <MshIO/io_utils.h>
+#include "io_utils.h"
 
 #include <cassert>
 #include <fstream>
@@ -13,7 +13,7 @@ namespace mshio {
 
 namespace internal {
 
-inline void load_data_header(std::istream& in, DataHeader& header)
+void load_data_header(std::istream& in, DataHeader& header)
 {
     size_t num_string_tags, num_real_tags, num_int_tags;
 
@@ -38,7 +38,7 @@ inline void load_data_header(std::istream& in, DataHeader& header)
 }
 
 namespace v41 {
-inline void load_data_entry(
+void load_data_entry(
     std::istream& in, DataEntry& entry, size_t fields_per_entry, bool is_element_node_data)
 {
     in.read(reinterpret_cast<char*>(&entry.tag), sizeof(size_t));
@@ -54,7 +54,7 @@ inline void load_data_entry(
 } // namespace v41
 
 namespace v22 {
-inline void load_data_entry(
+void load_data_entry(
     std::istream& in, DataEntry& entry, size_t fields_per_entry, bool is_element_node_data)
 {
     int32_t tag_32;
@@ -73,7 +73,7 @@ inline void load_data_entry(
 }
 } // namespace v22
 
-inline void load_data(std::istream& in,
+void load_data(std::istream& in,
     Data& data,
     const std::string& version,
     bool is_binary,
@@ -118,7 +118,7 @@ inline void load_data(std::istream& in,
 } // namespace internal
 
 
-inline void load_node_data(std::istream& in, MshSpec& spec)
+void load_node_data(std::istream& in, MshSpec& spec)
 {
     const std::string& version = spec.mesh_format.version;
     bool is_binary = spec.mesh_format.file_type > 0;
@@ -126,7 +126,7 @@ inline void load_node_data(std::istream& in, MshSpec& spec)
     internal::load_data(in, spec.node_data.back(), version, is_binary, false);
 }
 
-inline void load_element_data(std::istream& in, MshSpec& spec)
+void load_element_data(std::istream& in, MshSpec& spec)
 {
     const std::string& version = spec.mesh_format.version;
     bool is_binary = spec.mesh_format.file_type > 0;
@@ -134,7 +134,7 @@ inline void load_element_data(std::istream& in, MshSpec& spec)
     internal::load_data(in, spec.element_data.back(), version, is_binary, false);
 }
 
-inline void load_element_node_data(std::istream& in, MshSpec& spec)
+void load_element_node_data(std::istream& in, MshSpec& spec)
 {
     const std::string& version = spec.mesh_format.version;
     bool is_binary = spec.mesh_format.file_type > 0;

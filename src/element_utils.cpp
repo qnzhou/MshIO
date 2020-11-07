@@ -1,12 +1,8 @@
-#pragma once
-
-#include <MshIO/exception.h>
-
-#include <sstream>
+#include "element_utils.h"
 
 namespace mshio {
 
-inline void assert_element_is_supported(int element_type)
+void assert_element_is_supported(int element_type)
 {
     if (element_type <= 0 || element_type >= 15) {
         std::stringstream msg;
@@ -15,7 +11,7 @@ inline void assert_element_is_supported(int element_type)
     }
 }
 
-inline size_t nodes_per_element(int element_type)
+size_t nodes_per_element(int element_type)
 {
     assert_element_is_supported(element_type);
     // We support the first 15 element type so far.
@@ -23,7 +19,7 @@ inline size_t nodes_per_element(int element_type)
     return element_sizes[element_type];
 }
 
-inline int get_element_dim(int element_type)
+int get_element_dim(int element_type)
 {
     assert_element_is_supported(element_type);
     // We support the first 15 element type so far.

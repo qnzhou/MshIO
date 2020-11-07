@@ -1,9 +1,9 @@
-#pragma once
+#include "save_msh_elements.h"
+#include "element_utils.h"
+#include "io_utils.h"
 
 #include <MshIO/MshSpec.h>
-#include <MshIO/element_utils.h>
 #include <MshIO/exception.h>
-#include <MshIO/io_utils.h>
 
 #include <algorithm>
 #include <cassert>
@@ -16,7 +16,7 @@ namespace mshio {
 
 namespace v41 {
 
-inline void save_elements_ascii(std::ostream& out, const MshSpec& spec)
+void save_elements_ascii(std::ostream& out, const MshSpec& spec)
 {
     const Elements& elements = spec.elements;
     out << elements.num_entity_blocks << std::endl;
@@ -45,7 +45,7 @@ inline void save_elements_ascii(std::ostream& out, const MshSpec& spec)
     }
 }
 
-inline void save_elements_binary(std::ostream& out, const MshSpec& spec)
+void save_elements_binary(std::ostream& out, const MshSpec& spec)
 {
     const Elements& elements = spec.elements;
     out.write(reinterpret_cast<const char*>(&elements.num_entity_blocks), sizeof(size_t));
@@ -70,7 +70,7 @@ inline void save_elements_binary(std::ostream& out, const MshSpec& spec)
 
 namespace v22 {
 
-inline void save_elements_ascii(std::ostream& out, const MshSpec& spec)
+void save_elements_ascii(std::ostream& out, const MshSpec& spec)
 {
     const Elements& elements = spec.elements;
     out << elements.num_elements << std::endl;
@@ -95,7 +95,7 @@ inline void save_elements_ascii(std::ostream& out, const MshSpec& spec)
     }
 }
 
-inline void save_elements_binary(std::ostream& out, const MshSpec& spec)
+void save_elements_binary(std::ostream& out, const MshSpec& spec)
 {
     const Elements& elements = spec.elements;
     out << elements.num_elements << std::endl;
@@ -125,7 +125,7 @@ inline void save_elements_binary(std::ostream& out, const MshSpec& spec)
 
 } // namespace v22
 
-inline void save_elements(std::ostream& out, const MshSpec& spec)
+void save_elements(std::ostream& out, const MshSpec& spec)
 {
     const std::string& version = spec.mesh_format.version;
     const bool is_ascii = spec.mesh_format.file_type == 0;

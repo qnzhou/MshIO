@@ -1,8 +1,8 @@
-#pragma once
+#include "load_msh_format.h"
+#include "io_utils.h"
 
 #include <MshIO/MshSpec.h>
 #include <MshIO/exception.h>
-#include <MshIO/io_utils.h>
 
 #include <cassert>
 #include <fstream>
@@ -11,7 +11,7 @@
 
 namespace mshio {
 
-inline void load_mesh_format(std::istream& in, MshSpec& spec)
+void load_mesh_format(std::istream& in, MshSpec& spec)
 {
     MeshFormat& format = spec.mesh_format;
     in >> format.version;

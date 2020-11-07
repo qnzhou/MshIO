@@ -1,4 +1,4 @@
-#pragma once
+#include "save_msh_format.h"
 
 #include <MshIO/MshSpec.h>
 
@@ -6,7 +6,7 @@
 
 namespace mshio {
 
-inline void save_mesh_format(std::ostream& out, const MshSpec& spec)
+void save_mesh_format(std::ostream& out, const MshSpec& spec)
 {
     const MeshFormat& format = spec.mesh_format;
     out << "$MeshFormat" << std::endl;

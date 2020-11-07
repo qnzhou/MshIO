@@ -1,9 +1,9 @@
-#pragma once
+#include "load_msh_format.h"
+#include "element_utils.h"
+#include "io_utils.h"
 
 #include <MshIO/MshSpec.h>
-#include <MshIO/element_utils.h>
 #include <MshIO/exception.h>
-#include <MshIO/io_utils.h>
 
 #include <algorithm>
 #include <cassert>
@@ -16,7 +16,7 @@ namespace mshio {
 
 namespace v41 {
 
-inline void load_elements_ascii(std::istream& in, MshSpec& spec)
+void load_elements_ascii(std::istream& in, MshSpec& spec)
 {
     Elements& elements = spec.elements;
     in >> elements.num_entity_blocks;
@@ -45,7 +45,7 @@ inline void load_elements_ascii(std::istream& in, MshSpec& spec)
     }
 }
 
-inline void load_elements_binary(std::istream& in, MshSpec& spec)
+void load_elements_binary(std::istream& in, MshSpec& spec)
 {
     eat_white_space(in);
     Elements& elements = spec.elements;
@@ -74,7 +74,7 @@ inline void load_elements_binary(std::istream& in, MshSpec& spec)
 } // namespace v41
 
 namespace v22 {
-inline void load_elements_ascii(std::istream& in, MshSpec& spec)
+void load_elements_ascii(std::istream& in, MshSpec& spec)
 {
     Elements& elements = spec.elements;
     in >> elements.num_elements;
@@ -121,7 +121,7 @@ inline void load_elements_ascii(std::istream& in, MshSpec& spec)
     }
 }
 
-inline void load_elements_binary(std::istream& in, MshSpec& spec)
+void load_elements_binary(std::istream& in, MshSpec& spec)
 {
     Elements& elements = spec.elements;
     in >> elements.num_elements;
@@ -178,7 +178,7 @@ inline void load_elements_binary(std::istream& in, MshSpec& spec)
 
 } // namespace v22
 
-inline void load_elements(std::istream& in, MshSpec& spec)
+void load_elements(std::istream& in, MshSpec& spec)
 {
     const std::string& version = spec.mesh_format.version;
     const bool is_ascii = spec.mesh_format.file_type == 0;

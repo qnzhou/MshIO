@@ -40,4 +40,4 @@ jobs:
         cd build
         cmake .. -DCMAKE_GENERATOR_PLATFORM=x64 -DMSHIO_BUILD_TESTS=On -DMSHIO_BUILD_EXAMPLES=On
         cmake --build . --config Release
-        ./test_MshIO
+        cmake --build . --config Release --target test

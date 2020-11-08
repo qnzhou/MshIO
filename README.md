@@ -2,7 +2,7 @@
 
 MshIO is a tiny library written with modern C++.  It is created by Qingnan Zhou
 as a coding exercise.  It supports reading and writing [MSH format] with both
-ASCII and binary encodings.
+ASCII and binary encodings for both version 2.2 and version 4.1.
 
 ## Usage
 
@@ -213,14 +213,21 @@ fields.
 The following types are supported by MshIO:
 
 | Type ID | Name | Dim | # nodes |
-|:-:|--------------------|---|---|
-| 1 | 2-node line        | 1 | 2 |
-| 2 | 3-node triangle    | 2 | 3 |
-| 3 | 4-node quad        | 2 | 4 |
-| 4 | 4-node tetrahedron | 3 | 4 |
-| 5 | 8-node hexahedron  | 3 | 8 |
-
-TODO
+|:--:|----------------------------------|---|----|
+| 1  | 2-node line                      | 1 | 2  |
+| 2  | 3-node triangle                  | 2 | 3  |
+| 3  | 4-node quad                      | 2 | 4  |
+| 4  | 4-node tetrahedron               | 3 | 4  |
+| 5  | 8-node hexahedron                | 3 | 8  |
+| 6  | 6-node prism                     | 3 | 6  |
+| 7  | 5-node pyramid                   | 3 | 5  |
+| 8  | 3-node second order line         | 1 | 3  |
+| 9  | 6-node second order triangle     | 2 | 6  |
+| 10 | 9-node second order quad         | 2 | 9  |
+| 11 | 10-node second order tetrahedron | 3 | 10 |
+| 12 | 27-node second order hexahedron  | 3 | 27 |
+| 13 | 18-node second order prism       | 3 | 18 |
+| 14 | 14-node second order pyramid     | 3 | 14 |
 
 
 [MSH format]: https://gmsh.info/doc/texinfo/gmsh.html#MSH-file-format

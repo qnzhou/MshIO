@@ -231,6 +231,7 @@ The following types are supported by MshIO:
 | 12 | 27-node second order hexahedron  | 3 | 27 |
 | 13 | 18-node second order prism       | 3 | 18 |
 | 14 | 14-node second order pyramid     | 3 | 14 |
+| 15 | 1-node point                     | 0 | 1  |
 
 
 [MSH format]: https://gmsh.info/doc/texinfo/gmsh.html#MSH-file-format

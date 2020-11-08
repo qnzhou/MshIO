@@ -80,7 +80,7 @@ A node block is simply a group of nodes.
 
 ```c++
 auto& block = nodes.entity_blocks[k];
-block.entity_dim = 3;          // The dimension of the entity.
+block.entity_dim = 2;          // The dimension of the entity.
 block.entity_tag = 1;          // The entity these nodes belongs to.
 block.parametric = 0;          // 0: non-parametric, 1: parametric.
 block.num_nodes_in_block = 3;  // The number of nodes in block.

@@ -13,7 +13,7 @@ void regroup_nodes_into_blocks(MshSpec& spec)
 
     std::vector<size_t> entity_dims(nodes.max_node_tag - nodes.min_node_tag + 1, 0);
     std::vector<size_t> entity_tags(nodes.max_node_tag - nodes.min_node_tag + 1, 0);
-    auto node_index = [&](int node_tag) {
+    auto node_index = [&](size_t node_tag) {
         return static_cast<size_t>(node_tag - nodes.min_node_tag);
     };
 

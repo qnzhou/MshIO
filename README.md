@@ -18,7 +18,7 @@ mshio::save_msh("output.msh", spec);
 
 ## `MshSpec` data structure
 
-`MshSpec` ([code](../blob/main/include/MshIO/MshSpec.h)) is a data structure
+`MshSpec` ([code](../main/include/MshIO/MshSpec.h)) is a data structure
 that maps almost verbatim to the information stored in a MSH file.  Currently,
 the following sections are supported:
 

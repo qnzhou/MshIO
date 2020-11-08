@@ -70,7 +70,7 @@ nodes.num_entity_blocksl = 1;  // Number of node blocks.
 nodes.num_nodes = 3;           // Total number of nodes.
 nodes.min_node_tag = 1;
 nodes.min_node_tag = 3;
-nodes.entity_blocks = ...;     // A std::vector of node blocks.
+nodes.entity_blocks = {...};   // A std::vector of node blocks.
 ```
 
 #### Node block
@@ -83,8 +83,8 @@ block.entity_dim = 3;          // The dimension of the entity.
 block.entity_tag = 1;          // The entity these nodes belongs to.
 block.parametric = 0;          // 0: non-parametric, 1: parametric.
 block.num_nodes_in_block = 3;  // The number of nodes in block.
-block.tags = ...;              // A std::vector of unique, positive node tags.
-block.data = ...;              // A std::vector of coordinates (x,y,z,<u>,<v>,<w>,...)
+block.tags = {...};            // A std::vector of unique, positive node tags.
+block.data = {...};            // A std::vector of coordinates (x,y,z,<u>,<v>,<w>,...)
 ```
 
 When `block.parametric` is `1`, `block.data` contains the parametric coordinates
@@ -104,7 +104,7 @@ elements.num_entity_blocks = 1;  // Number of element blocks.
 elements.num_elements = 12;      // Total number of elmeents.
 elements.min_element_tag = 1;
 elements.max_element_tag = 12;
-elements.entity_blocks = ...;    // A std::vector of element blocks.
+elements.entity_blocks = {...};  // A std::vector of element blocks.
 ```
 
 #### Element block
@@ -117,7 +117,7 @@ block.entity_dim = 2;             // The dimension of the elements.
 block.entity_tag = 1;             // The entity these elements belongs to.
 block.element_type = 2;           // See element type table below.
 block.num_elements_in_block = 12; // The number of elements in this block.
-block.data = ...;                 // See more detail below.
+block.data = {...};               // See more detail below.
 ```
 
 #### Element types

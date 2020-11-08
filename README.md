@@ -70,7 +70,7 @@ auto& nodes = spec.nodes;
 nodes.num_entity_blocksl = 1;  // Number of node blocks.
 nodes.num_nodes = 3;           // Total number of nodes.
 nodes.min_node_tag = 1;
-nodes.min_node_tag = 3;
+nodes.max_node_tag = 3;
 nodes.entity_blocks = {...};   // A std::vector of node blocks.
 ```
 

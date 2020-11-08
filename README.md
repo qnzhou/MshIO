@@ -4,6 +4,8 @@ MshIO is a tiny library written with modern C++.  It is created by Qingnan Zhou
 as a coding exercise.  It supports reading and writing [MSH format] with both
 ASCII and binary encodings for both version 2.2 and version 4.1.
 
+![build and test](https://github.com/qnzhou/MshIO/workflows/build%20and%20test/badge.svg)
+
 ## Usage
 
 ```c++

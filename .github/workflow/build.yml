@@ -1,0 +1,43 @@
+name: build and test
+
+on: [push]
+
+jobs:
+  build-Ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: build and run
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DMSHIO_BUILD_TESTS=On -DMSHIO_BUILD_EXAMPLES=On
+        make -j
+        ./test_MshIO
+
+  build-MacOS:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: build and run
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DMSHIO_BUILD_TESTS=On -DMSHIO_BUILD_EXAMPLES=On
+        make -j
+        ./test_MshIO
+
+  build-Windows:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: build and run
+      run: |
+        mkdir build
+        cd build
+        cmake .. -DCMAKE_GENERATOR_PLATFORM=x64 -DMSHIO_BUILD_TESTS=On -DMSHIO_BUILD_EXAMPLES=On
+        cmake --build . --config Release
+        ./test_MshIO

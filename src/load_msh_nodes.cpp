@@ -85,9 +85,6 @@ void load_nodes_binary(std::istream& in, MshSpec& spec)
 } // namespace v41
 
 namespace v22 {
-//In version 2.2, we make the assumption that surface nodes and volume nodes
-//are stored in separate sections of $Nodes .. $EndNodes.  Each section will
-//be loaded as a node block.
 
 void load_nodes_ascii(std::istream& in, MshSpec& spec)
 {

@@ -72,21 +72,16 @@ namespace v22 {
 void save_nodes_ascii(std::ostream& out, const MshSpec& spec)
 {
     const Nodes& nodes = spec.nodes;
+    out << nodes.num_nodes << std::endl;
 
     for (size_t i=0; i<nodes.num_entity_blocks; i++) {
         const auto& block = nodes.entity_blocks[i];
         const size_t entries_per_node =
             static_cast<size_t>(3 + ((block.parametric == 1) ? block.entity_dim : 0));
-        out << block.num_nodes_in_block << std::endl;
         for (size_t j = 0; j < block.num_nodes_in_block; j++) {
             out << block.tags[j] << " " << block.data[j * entries_per_node] << " "
                 << block.data[j * entries_per_node + 1] << " "
                 << block.data[j * entries_per_node + 2] << std::endl;
-        }
-
-        if (i+1 != nodes.num_entity_blocks) {
-            out << "$EndNodes" << std::endl;
-            out << "$Nodes" << std::endl;
         }
     }
 }
@@ -94,22 +89,17 @@ void save_nodes_ascii(std::ostream& out, const MshSpec& spec)
 void save_nodes_binary(std::ostream& out, const MshSpec& spec)
 {
     const Nodes& nodes = spec.nodes;
+    out << nodes.num_nodes << std::endl;
 
     for (size_t i=0; i<nodes.num_entity_blocks; i++) {
         const auto& block = nodes.entity_blocks[i];
         const size_t entries_per_node =
             static_cast<size_t>(3 + ((block.parametric == 1) ? block.entity_dim : 0));
-        out << block.num_nodes_in_block << std::endl;
         for (size_t j = 0; j < block.num_nodes_in_block; j++) {
             const int32_t node_id = static_cast<int32_t>(block.tags[j]);
             out.write(reinterpret_cast<const char*>(&node_id), 4);
             out.write(reinterpret_cast<const char*>(block.data.data() + j * entries_per_node),
                 static_cast<std::streamsize>(sizeof(double) * 3));
-        }
-
-        if (i+1 != nodes.num_entity_blocks) {
-            out << "$EndNodes" << std::endl;
-            out << "$Nodes" << std::endl;
         }
     }
 }

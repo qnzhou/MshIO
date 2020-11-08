@@ -77,18 +77,20 @@ namespace v22 {
 void load_elements_ascii(std::istream& in, MshSpec& spec)
 {
     Elements& elements = spec.elements;
-    elements.num_entity_blocks++;
-    elements.entity_blocks.emplace_back();
-    auto& block = elements.entity_blocks.back();
-    in >> block.num_elements_in_block;
-    elements.num_elements += block.num_elements_in_block;
+    size_t num_elements;
+    in >> num_elements;
+
+    // Due to v2.2 constraints, each element is parsed as a separate block, and
+    // a regrouping will happen at post-processing time.
+    elements.num_entity_blocks += num_elements;
+    elements.num_elements += num_elements;
 
     int element_num, element_type;
     int num_tags;
     std::vector<int> tags;
     std::vector<int> node_ids;
 
-    for (size_t i = 0; i < block.num_elements_in_block; i++) {
+    for (size_t i = 0; i < num_elements; i++) {
         in >> element_num;
         in >> element_type;
         in >> num_tags;
@@ -108,24 +110,21 @@ void load_elements_ascii(std::istream& in, MshSpec& spec)
         elements.max_element_tag =
             std::max(elements.max_element_tag, static_cast<size_t>(element_num));
 
-        if (i == 0) {
-            block.entity_dim = get_element_dim(element_type);
-            if (tags.size() > 0) {
-                block.entity_tag = tags.front();
-            } else {
-                block.entity_tag = 1;
-            }
-            block.element_type = element_type;
-            block.data.resize((n + 1) * block.num_elements_in_block);
+        elements.entity_blocks.emplace_back();
+        auto& block = elements.entity_blocks.back();
+        block.num_elements_in_block = 1;
+        block.entity_dim = get_element_dim(element_type);
+        if (tags.size() > 0) {
+            block.entity_tag = tags.front();
         } else {
-            if (block.element_type != element_type) {
-                throw UnsupportedFeature("Mix elements in a single element block is not supported");
-            }
+            block.entity_tag = 1;
         }
+        block.element_type = element_type;
+        block.data.resize(n + 1);
 
-        block.data[i * (n + 1)] = static_cast<size_t>(element_num);
+        block.data[0] = static_cast<size_t>(element_num);
         for (size_t j = 0; j < n; j++) {
-            block.data[i * (n + 1) + j + 1] = static_cast<size_t>(node_ids[j]);
+            block.data[j + 1] = static_cast<size_t>(node_ids[j]);
         }
     }
 }

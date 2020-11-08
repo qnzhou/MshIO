@@ -73,9 +73,10 @@ namespace v22 {
 void save_elements_ascii(std::ostream& out, const MshSpec& spec)
 {
     const Elements& elements = spec.elements;
+    out << elements.num_elements << std::endl;
+
     for (size_t i = 0; i < elements.num_entity_blocks; i++) {
         const ElementBlock& block = elements.entity_blocks[i];
-        out << block.num_elements_in_block << std::endl;
         int element_type = block.element_type;
         const size_t n = nodes_per_element(element_type);
         constexpr int num_tags = 1;
@@ -91,11 +92,6 @@ void save_elements_ascii(std::ostream& out, const MshSpec& spec)
                     out << ' ';
                 }
             }
-        }
-        if (i+1 != elements.num_entity_blocks) {
-            // Store each block in separate element sections.
-            out << "$EndElements" << std::endl;
-            out << "$Elements" << std::endl;
         }
     }
 }

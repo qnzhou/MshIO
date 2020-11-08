@@ -16,16 +16,17 @@ MshIO::save_msh("output.msh", spec);
 
 ## `MshSpec` data structure
 
-`MshSpec` is a data structure that maps almost verbatim to the information
-stored in a MSH file.  Currently, the following sections are supported:
+`MshSpec` ([code](../blob/main/include/MshIO/MshSpec.h)) is a data structure
+that maps almost verbatim to the information stored in a MSH file.  Currently,
+the following sections are supported:
 
 | Section name | Description |
 |----:|---|
-| [Mesh format] | Format header. |
-| [Nodes] | 3D coordinates of nodes and (optionally) their parameterization coordinates. |
-| [Elements] | A list of elements grouped by blocks. |
-| [Node data] | Scalar/vector/tensor fields defined on nodes. |
-| [Element data] | Scalar/vector/tensor fields defined on elements. |
+| [Mesh format]       | Format header. |
+| [Nodes]             | 3D coordinates of nodes and (optionally) their parameterization coordinates. |
+| [Elements]          | A list of elements grouped by blocks. |
+| [Node data]         | Scalar/vector/tensor fields defined on nodes. |
+| [Element data]      | Scalar/vector/tensor fields defined on elements. |
 | [Element-node data] | Scalar/vector/tensor fields defined over each node of each element. |
 
 The follow sections are supported by MSH format, but not yet supported by MshIO
@@ -159,7 +160,7 @@ See the [supported element types](#Supported-element-types) table.
 One of main advantage of MSH format is its support for storing post-processing
 data along with the mesh.  There are 3 types of post-processing data: node data,
 element data and element-node data.  Each type of post-processing data consists
-of a header and a `std::vector` of entires.
+of a header and a `std::vector` of entries.
 
 ```c++
 auto& node_data = spec.node_data[k];
@@ -193,7 +194,7 @@ element-node.
 
 ```c++
 auto& data_entries = node_data.entries;
-auto& entry = data_entires[k];
+auto& entry = data_entries[k];
 
 entry.tag = 1; // The target node (for node data) or element tag (for element data).
 entry.data = {...}; // A std::vector of double data.

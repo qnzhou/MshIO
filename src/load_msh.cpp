@@ -4,6 +4,7 @@
 #include "load_msh_elements.h"
 #include "load_msh_format.h"
 #include "load_msh_nodes.h"
+#include "load_msh_post_process.h"
 
 #include <cassert>
 #include <fstream>
@@ -48,6 +49,7 @@ MshSpec load_msh(std::istream& in)
         forward_to(in, end_str);
     }
 
+    load_msh_post_process(spec);
     return spec;
 }
 

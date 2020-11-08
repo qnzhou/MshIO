@@ -7,8 +7,8 @@
 #include <algorithm>
 #include <cassert>
 #include <fstream>
-#include <string>
 #include <sstream>
+#include <string>
 
 namespace mshio {
 namespace v41 {
@@ -85,22 +85,23 @@ void load_nodes_binary(std::istream& in, MshSpec& spec)
 } // namespace v41
 
 namespace v22 {
+//In version 2.2, we make the assumption that surface nodes and volume nodes
+//are stored in separate sections of $Nodes .. $EndNodes.  Each section will
+//be loaded as a node block.
 
 void load_nodes_ascii(std::istream& in, MshSpec& spec)
 {
     Nodes& nodes = spec.nodes;
-    nodes.num_entity_blocks = 1;
-    nodes.min_node_tag = std::numeric_limits<size_t>::max();
-    nodes.max_node_tag = 0;
-    in >> nodes.num_nodes;
-    assert(in.good());
-    nodes.entity_blocks.resize(1);
+    nodes.num_entity_blocks++;
+    nodes.entity_blocks.emplace_back();
 
-    NodeBlock& block = nodes.entity_blocks[0];
-    block.entity_dim = 0;
-    block.entity_tag = 1;
+    NodeBlock& block = nodes.entity_blocks.back();
+    block.entity_dim = 0; // Will be determined once elements are loaded.
+    block.entity_tag = 0; // Same as above.
     block.parametric = 0;
-    block.num_nodes_in_block = nodes.num_nodes;
+    in >> block.num_nodes_in_block;
+    assert(in.good());
+    nodes.num_nodes += block.num_nodes_in_block;
 
     block.tags.resize(block.num_nodes_in_block);
     block.data.resize(block.num_nodes_in_block * 3);
@@ -109,29 +110,30 @@ void load_nodes_ascii(std::istream& in, MshSpec& spec)
         in >> block.data[i * 3];
         in >> block.data[i * 3 + 1];
         in >> block.data[i * 3 + 2];
+        assert(in.good());
     }
 
     if (block.num_nodes_in_block > 0) {
-        nodes.min_node_tag = *std::min_element(block.tags.begin(), block.tags.end());
-        nodes.max_node_tag = *std::max_element(block.tags.begin(), block.tags.end());
+        nodes.min_node_tag =
+            std::min(nodes.min_node_tag, *std::min_element(block.tags.begin(), block.tags.end()));
+        nodes.max_node_tag =
+            std::max(nodes.max_node_tag, *std::max_element(block.tags.begin(), block.tags.end()));
     }
 }
 
 void load_nodes_binary(std::istream& in, MshSpec& spec)
 {
     Nodes& nodes = spec.nodes;
-    nodes.num_entity_blocks = 1;
-    nodes.min_node_tag = std::numeric_limits<size_t>::max();
-    nodes.max_node_tag = 0;
-    in >> nodes.num_nodes;
-    assert(in.good());
-    nodes.entity_blocks.resize(1);
+    nodes.num_entity_blocks++;
+    nodes.entity_blocks.emplace_back();
 
-    NodeBlock& block = nodes.entity_blocks[0];
-    block.entity_dim = 0;
-    block.entity_tag = 1;
+    NodeBlock& block = nodes.entity_blocks.back();
+    block.entity_dim = 0; // Will be determined once elements are loaded.
+    block.entity_tag = 0; // Same as above.
     block.parametric = 0;
-    block.num_nodes_in_block = nodes.num_nodes;
+    in >> block.num_nodes_in_block;
+    assert(in.good());
+    nodes.num_nodes += block.num_nodes_in_block;
 
     block.tags.resize(block.num_nodes_in_block);
     block.data.resize(block.num_nodes_in_block * 3);
@@ -145,8 +147,10 @@ void load_nodes_binary(std::istream& in, MshSpec& spec)
     }
 
     if (block.num_nodes_in_block > 0) {
-        nodes.min_node_tag = *std::min_element(block.tags.begin(), block.tags.end());
-        nodes.max_node_tag = *std::max_element(block.tags.begin(), block.tags.end());
+        nodes.min_node_tag =
+            std::min(nodes.min_node_tag, *std::min_element(block.tags.begin(), block.tags.end()));
+        nodes.max_node_tag =
+            std::max(nodes.max_node_tag, *std::max_element(block.tags.begin(), block.tags.end()));
     }
 }
 
@@ -154,6 +158,11 @@ void load_nodes_binary(std::istream& in, MshSpec& spec)
 
 void load_nodes(std::istream& in, MshSpec& spec)
 {
+    if (spec.nodes.entity_blocks.size() == 0) {
+        spec.nodes.min_node_tag = std::numeric_limits<size_t>::max();
+        spec.nodes.max_node_tag = 0;
+        spec.nodes.num_nodes = 0;
+    }
     const std::string& version = spec.mesh_format.version;
     const bool is_ascii = spec.mesh_format.file_type == 0;
     if (version == "4.1") {

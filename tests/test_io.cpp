@@ -180,7 +180,7 @@ TEST_CASE("Line element", "[line][io]")
     nodes.entity_blocks.resize(1);
 
     auto& node_block = nodes.entity_blocks[0];
-    node_block.entity_dim = 0;
+    node_block.entity_dim = 1;
     node_block.entity_tag = 1;
     node_block.num_nodes_in_block = 2;
     node_block.tags.push_back(1);
@@ -228,7 +228,7 @@ TEST_CASE("triangle element", "[triangle][io]")
     nodes.entity_blocks.resize(1);
 
     auto& node_block = nodes.entity_blocks[0];
-    node_block.entity_dim = 0;
+    node_block.entity_dim = 2;
     node_block.entity_tag = 1;
     node_block.num_nodes_in_block = 3;
     node_block.tags.push_back(1);
@@ -278,32 +278,54 @@ TEST_CASE("mixed element", "[mixed][io]")
     MshSpec spec;
     auto& nodes = spec.nodes;
 
-    nodes.num_entity_blocks = 1;
-    nodes.num_nodes = 4;
+    nodes.num_entity_blocks = 2;
+    nodes.num_nodes = 8;
     nodes.min_node_tag = 1;
-    nodes.max_node_tag = 4;
-    nodes.entity_blocks.resize(1);
+    nodes.max_node_tag = 8;
+    nodes.entity_blocks.resize(2);
 
-    auto& node_block = nodes.entity_blocks[0];
-    node_block.entity_dim = 0;
-    node_block.entity_tag = 1;
-    node_block.num_nodes_in_block = 4;
-    node_block.tags.push_back(1);
-    node_block.data.push_back(0.0);
-    node_block.data.push_back(0.0);
-    node_block.data.push_back(0.0);
-    node_block.tags.push_back(2);
-    node_block.data.push_back(1.0);
-    node_block.data.push_back(0.0);
-    node_block.data.push_back(0.0);
-    node_block.tags.push_back(3);
-    node_block.data.push_back(1.0);
-    node_block.data.push_back(1.0);
-    node_block.data.push_back(0.0);
-    node_block.tags.push_back(4);
-    node_block.data.push_back(0.0);
-    node_block.data.push_back(1.0);
-    node_block.data.push_back(0.0);
+    auto& node_block_1 = nodes.entity_blocks[0];
+    node_block_1.entity_dim = 2;
+    node_block_1.entity_tag = 1;
+    node_block_1.num_nodes_in_block = 4;
+    node_block_1.tags.push_back(1);
+    node_block_1.data.push_back(0.0);
+    node_block_1.data.push_back(0.0);
+    node_block_1.data.push_back(0.0);
+    node_block_1.tags.push_back(2);
+    node_block_1.data.push_back(1.0);
+    node_block_1.data.push_back(0.0);
+    node_block_1.data.push_back(0.0);
+    node_block_1.tags.push_back(3);
+    node_block_1.data.push_back(1.0);
+    node_block_1.data.push_back(1.0);
+    node_block_1.data.push_back(0.0);
+    node_block_1.tags.push_back(4);
+    node_block_1.data.push_back(0.0);
+    node_block_1.data.push_back(1.0);
+    node_block_1.data.push_back(0.0);
+
+    auto& node_block_2 = nodes.entity_blocks[1];
+    node_block_2.entity_dim = 1;
+    node_block_2.entity_tag = 1;
+    node_block_2.num_nodes_in_block = 4;
+    node_block_2.tags.push_back(5);
+    node_block_2.data.push_back(0.0);
+    node_block_2.data.push_back(0.0);
+    node_block_2.data.push_back(0.0);
+    node_block_2.tags.push_back(6);
+    node_block_2.data.push_back(1.0);
+    node_block_2.data.push_back(0.0);
+    node_block_2.data.push_back(0.0);
+    node_block_2.tags.push_back(7);
+    node_block_2.data.push_back(1.0);
+    node_block_2.data.push_back(1.0);
+    node_block_2.data.push_back(0.0);
+    node_block_2.tags.push_back(8);
+    node_block_2.data.push_back(0.0);
+    node_block_2.data.push_back(1.0);
+    node_block_2.data.push_back(0.0);
+
 
     validate_spec(spec);
 
@@ -331,22 +353,18 @@ TEST_CASE("mixed element", "[mixed][io]")
     element_block_2.element_type = 1;
     element_block_2.num_elements_in_block = 4;
     element_block_2.data.push_back(2); // Element tag
-    element_block_2.data.push_back(1);
-    element_block_2.data.push_back(2);
+    element_block_2.data.push_back(5);
+    element_block_2.data.push_back(6);
     element_block_2.data.push_back(3); // Element tag
-    element_block_2.data.push_back(2);
-    element_block_2.data.push_back(3);
+    element_block_2.data.push_back(6);
+    element_block_2.data.push_back(7);
     element_block_2.data.push_back(4); // Element tag
-    element_block_2.data.push_back(3);
-    element_block_2.data.push_back(4);
+    element_block_2.data.push_back(7);
+    element_block_2.data.push_back(8);
     element_block_2.data.push_back(5); // Element tag
-    element_block_2.data.push_back(4);
-    element_block_2.data.push_back(1);
+    element_block_2.data.push_back(8);
+    element_block_2.data.push_back(5);
 
     validate_spec(spec);
     save_and_load(spec);
-
-    spec.mesh_format.version = "4.1";
-    spec.mesh_format.file_type= 0;
-    save_msh("debug.msh", spec);
 }

@@ -14,7 +14,7 @@ jobs:
         cd build
         cmake .. -DCMAKE_BUILD_TYPE=Release -DMSHIO_BUILD_TESTS=On -DMSHIO_BUILD_EXAMPLES=On
         make -j
-        ./test_MshIO
+        ctest
 
   build-MacOS:
     runs-on: macos-latest
@@ -27,7 +27,7 @@ jobs:
         cd build
         cmake .. -DCMAKE_BUILD_TYPE=Release -DMSHIO_BUILD_TESTS=On -DMSHIO_BUILD_EXAMPLES=On
         make -j
-        ./test_MshIO
+        ctest
 
   build-Windows:
     runs-on: windows-latest

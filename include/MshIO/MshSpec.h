@@ -7,7 +7,7 @@ namespace mshio {
 
 struct MeshFormat
 {
-    std::string version;
+    std::string version = "4.1";
     int file_type = 0;
     int data_size = sizeof(size_t);
 };

@@ -97,7 +97,7 @@ void load_nodes_ascii(std::istream& in, MshSpec& spec)
     nodes.entity_blocks.resize(1);
 
     NodeBlock& block = nodes.entity_blocks[0];
-    block.entity_dim = 3;
+    block.entity_dim = 0;
     block.entity_tag = 1;
     block.parametric = 0;
     block.num_nodes_in_block = nodes.num_nodes;
@@ -128,7 +128,7 @@ void load_nodes_binary(std::istream& in, MshSpec& spec)
     nodes.entity_blocks.resize(1);
 
     NodeBlock& block = nodes.entity_blocks[0];
-    block.entity_dim = 3;
+    block.entity_dim = 0;
     block.entity_tag = 1;
     block.parametric = 0;
     block.num_nodes_in_block = nodes.num_nodes;

@@ -1,6 +1,6 @@
-#include "load_msh_format.h"
 #include "element_utils.h"
 #include "io_utils.h"
+#include "load_msh_format.h"
 
 #include <MshIO/MshSpec.h>
 #include <MshIO/exception.h>
@@ -77,19 +77,18 @@ namespace v22 {
 void load_elements_ascii(std::istream& in, MshSpec& spec)
 {
     Elements& elements = spec.elements;
-    in >> elements.num_elements;
-    elements.num_entity_blocks = elements.num_elements;
-    elements.entity_blocks.resize(elements.num_elements);
-    elements.min_element_tag = std::numeric_limits<size_t>::max();
-    elements.max_element_tag = 0;
+    elements.num_entity_blocks++;
+    elements.entity_blocks.emplace_back();
+    auto& block = elements.entity_blocks.back();
+    in >> block.num_elements_in_block;
+    elements.num_elements += block.num_elements_in_block;
 
     int element_num, element_type;
     int num_tags;
     std::vector<int> tags;
     std::vector<int> node_ids;
 
-    for (size_t i = 0; i < elements.num_elements; i++) {
-        ElementBlock& block = elements.entity_blocks[i];
+    for (size_t i = 0; i < block.num_elements_in_block; i++) {
         in >> element_num;
         in >> element_type;
         in >> num_tags;
@@ -108,15 +107,25 @@ void load_elements_ascii(std::istream& in, MshSpec& spec)
             std::min(elements.min_element_tag, static_cast<size_t>(element_num));
         elements.max_element_tag =
             std::max(elements.max_element_tag, static_cast<size_t>(element_num));
-        block.entity_dim = get_element_dim(element_type);
-        block.entity_tag = 1;
-        block.element_type = element_type;
-        block.num_elements_in_block = 1;
-        block.data.resize(n + 1);
-        block.data[0] = static_cast<size_t>(element_num);
 
+        if (i == 0) {
+            block.entity_dim = get_element_dim(element_type);
+            if (tags.size() > 0) {
+                block.entity_tag = tags.front();
+            } else {
+                block.entity_tag = 1;
+            }
+            block.element_type = element_type;
+            block.data.resize((n + 1) * block.num_elements_in_block);
+        } else {
+            if (block.element_type != element_type) {
+                throw UnsupportedFeature("Mix elements in a single element block is not supported");
+            }
+        }
+
+        block.data[i * (n + 1)] = static_cast<size_t>(element_num);
         for (size_t j = 0; j < n; j++) {
-            block.data[j + 1] = static_cast<size_t>(node_ids[j]);
+            block.data[i * (n + 1) + j + 1] = static_cast<size_t>(node_ids[j]);
         }
     }
 }
@@ -172,14 +181,19 @@ void load_elements_binary(std::istream& in, MshSpec& spec)
     }
 
     elements.num_entity_blocks = elements.entity_blocks.size();
-    elements.min_element_tag = static_cast<size_t>(min_tag);
-    elements.max_element_tag = static_cast<size_t>(max_tag);
+    elements.min_element_tag = std::min(elements.min_element_tag, static_cast<size_t>(min_tag));
+    elements.max_element_tag = std::max(elements.max_element_tag, static_cast<size_t>(max_tag));
 }
 
 } // namespace v22
 
 void load_elements(std::istream& in, MshSpec& spec)
 {
+    if (spec.elements.entity_blocks.size() == 0) {
+        spec.elements.min_element_tag = std::numeric_limits<size_t>::max();
+        spec.elements.max_element_tag = 0;
+    }
+
     const std::string& version = spec.mesh_format.version;
     const bool is_ascii = spec.mesh_format.file_type == 0;
     if (version == "4.1") {

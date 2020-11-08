@@ -43,8 +43,8 @@ void regroup_nodes_into_blocks(MshSpec& spec)
                 auto& curr_block = node_blocks.back();
                 curr_block.tags.reserve(block.num_nodes_in_block);
                 curr_block.data.reserve(block.num_nodes_in_block * 3);
-                curr_block.entity_dim = dim;
-                curr_block.entity_tag = tag;
+                curr_block.entity_dim = static_cast<int>(dim);
+                curr_block.entity_tag = static_cast<int>(tag);
                 curr_dim = dim;
                 curr_tag = tag;
             }

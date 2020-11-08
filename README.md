@@ -9,9 +9,9 @@ ASCII and binary encodings for both version 2.2 and version 4.1.
 ```c++
 #include <MshIO/mshio.h>
 
-MshIO::MshSpec spec = MshIO::load_msh("input.msh");
+mshio::MshSpec spec = mshio::load_msh("input.msh");
 
-MshIO::save_msh("output.msh", spec);
+mshio::save_msh("output.msh", spec);
 ```
 
 ## `MshSpec` data structure
@@ -39,9 +39,9 @@ The follow sections are supported by MSH format, but not yet supported by MshIO
 * Parametrizations
 * Interpolation scheme
 
-All fields will be populated by `MshIO::load_msh()` method, and all fields
-should be set up correctly before calling `MshIO::save_msh()` method. The helper
-method `MshIO::validate_spec(spec)` can be used to check if a given `spec` is
+All fields will be populated by `mshio::load_msh()` method, and all fields
+should be set up correctly before calling `mshio::save_msh()` method. The helper
+method `mshio::validate_spec(spec)` can be used to check if a given `spec` is
 valid.
 
 ### Mesh format

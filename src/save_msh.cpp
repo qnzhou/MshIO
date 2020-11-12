@@ -1,9 +1,11 @@
 #include <MshIO/MshSpec.h>
 
+#include "save_msh_curves.h"
 #include "save_msh_data.h"
 #include "save_msh_elements.h"
 #include "save_msh_format.h"
 #include "save_msh_nodes.h"
+#include "save_msh_patches.h"
 
 #include <cassert>
 #include <fstream>
@@ -28,6 +30,15 @@ void save_msh(std::ostream& out, const MshSpec& spec)
     if (spec.element_node_data.size() > 0) {
         save_element_node_data(out, spec);
     }
+#ifdef MSHIO_EXT_NANOSPLINE
+    save_nanospline_format(out, spec);
+    if (spec.curves.size() > 0) {
+        save_curves(out, spec);
+    }
+    if (spec.patches.size() > 0) {
+        save_patches(out, spec);
+    }
+#endif
 }
 
 void save_msh(const std::string& filename, const MshSpec& spec)

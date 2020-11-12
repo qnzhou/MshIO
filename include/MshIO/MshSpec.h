@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+#include <MshIO/MshSpecExt.h>
+
 namespace mshio {
 
 struct MeshFormat
@@ -77,6 +79,11 @@ struct MshSpec
     std::vector<Data> node_data;
     std::vector<Data> element_data;
     std::vector<Data> element_node_data;
+
+    // Custom sections
+    NanoSplineFormat nanospline_format;
+    std::vector<Curve> curves;
+    std::vector<Patch> patches;
 };
 
 } // namespace mshio

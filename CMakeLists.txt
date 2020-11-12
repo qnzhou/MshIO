@@ -13,8 +13,9 @@ set(CMAKE_CXX_STANDARD 14)
 
 project(MshIO)
 
-option(MSHIO_BUILD_TESTS "Enalbe unit tests" Off)
-option(MSHIO_BUILD_EXAMPLES "Enalbe examples" Off)
+option(MSHIO_BUILD_TESTS "Build unit tests" Off)
+option(MSHIO_BUILD_EXAMPLES "Build examples" Off)
+option(MSHIO_EXT_NANOSPLINE "Enable nanospline extension" Off)
 
 include(FetchContent)
 include(cmake/sanitizer-cmake.cmake)
@@ -27,6 +28,11 @@ file(GLOB SRC_FILES "${PROJECT_SOURCE_DIR}/src/*.cpp")
 add_library(mshio STATIC ${SRC_FILES})
 target_include_directories(mshio PUBLIC ${PROJECT_SOURCE_DIR}/include)
 add_library(MshIO::MshIO ALIAS mshio)
+
+
+if (MSHIO_EXT_NANOSPLINE)
+    target_compile_definitions(mshio PUBLIC -DMSHIO_EXT_NANOSPLINE)
+endif()
 
 
 if (MSHIO_BUILD_EXAMPLES)

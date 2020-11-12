@@ -6,7 +6,8 @@
 namespace {
 
 using namespace mshio;
-void ASSERT_SAME(const MshSpec& spec1, const MshSpec& spec2) {
+
+void ASSERT_SAME_NODES(const MshSpec& spec1, const MshSpec& spec2) {
     const auto& nodes1 = spec1.nodes;
     const auto& nodes2 = spec2.nodes;
 
@@ -26,7 +27,9 @@ void ASSERT_SAME(const MshSpec& spec1, const MshSpec& spec2) {
         REQUIRE(block1.tags == block2.tags);
         REQUIRE(block1.data == block2.data);
     }
+}
 
+void ASSERT_SAME_ELEMENTS(const MshSpec& spec1, const MshSpec& spec2) {
     const auto& elements1 = spec1.elements;
     const auto& elements2 = spec2.elements;
 
@@ -46,6 +49,36 @@ void ASSERT_SAME(const MshSpec& spec1, const MshSpec& spec2) {
         REQUIRE(block1.num_elements_in_block == block2.num_elements_in_block);
         REQUIRE(block1.data == block2.data);
     }
+}
+
+void ASSERT_SAME_CURVES(const MshSpec& spec1, const MshSpec& spec2) {
+#ifdef MSHIO_EXT_NANOSPLINE
+    const auto& curves1 = spec1.curves;
+    const auto& curves2 = spec2.curves;
+
+    REQUIRE(curves1.size() == curves2.size());
+
+    const size_t N = curves1.size();
+    for (size_t i=0; i<N; i++) {
+        const auto& c1 = curves1[i];
+        const auto& c2 = curves2[i];
+
+        REQUIRE(c1.curve_tag == c2.curve_tag);
+        REQUIRE(c1.curve_type == c2.curve_type);
+        REQUIRE(c1.curve_degree == c2.curve_degree);
+        REQUIRE(c1.num_control_points == c2.num_control_points);
+        REQUIRE(c1.num_knots == c2.num_knots);
+        REQUIRE(c1.with_weights == c2.with_weights);
+        REQUIRE(c1.data == c2.data);
+    }
+#endif
+}
+
+void ASSERT_SAME(const MshSpec& spec1, const MshSpec& spec2) {
+    ASSERT_SAME_NODES(spec1, spec2);
+    ASSERT_SAME_ELEMENTS(spec1, spec2);
+
+    ASSERT_SAME_CURVES(spec1, spec2);
 }
 
 void save_and_load(MshSpec& spec) {
@@ -368,3 +401,86 @@ TEST_CASE("mixed element", "[mixed][io]")
     validate_spec(spec);
     save_and_load(spec);
 }
+
+#ifdef MSHIO_EXT_NANOSPLINE
+TEST_CASE("NanoSpline extension", "[nanospline][ext][io]")
+{
+    using namespace mshio;
+
+    MshSpec spec;
+
+    {
+        spec.curves.emplace_back();
+        auto& curve = spec.curves.back();
+        curve.curve_tag = 1;
+        curve.curve_type = 1;
+        curve.curve_degree = 3;
+        curve.num_control_points = 4;
+        curve.num_knots = 0;
+        curve.with_weights = 0;
+
+        curve.data = {
+            0.0, 0.0, 0.0,
+            1.0, 0.0, 0.0,
+            0.0, 1.0, 0.0,
+            1.0, 1.0, 0.0
+        };
+    }
+
+    {
+        spec.curves.emplace_back();
+        auto& curve = spec.curves.back();
+        curve.curve_tag = 2;
+        curve.curve_type = 2;
+        curve.curve_degree = 3;
+        curve.num_control_points = 4;
+        curve.num_knots = 0;
+        curve.with_weights = 1;
+
+        curve.data = {
+            0.0, 0.0, 0.0, 1.0,
+            1.0, 0.0, 0.0, 1.0,
+            0.0, 1.0, 0.0, 1.0,
+            1.0, 1.0, 0.0, 1.0
+        };
+    }
+
+    {
+        spec.patches.emplace_back();
+        auto& patch = spec.patches.back();
+        patch.patch_tag = 1;
+        patch.patch_type = 2;
+        patch.degree_u = 3;
+        patch.degree_v = 3;
+        patch.num_control_points = 16;
+        patch.num_u_knots = 0;
+        patch.num_v_knots = 0;
+        patch.with_weights = 1;
+
+        patch.data = {
+            0.0, 0.0, 0.0, 1.0,
+            1.0, 0.0, 0.0, 1.0,
+            2.0, 0.0, 0.0, 1.0,
+            3.0, 0.0, 0.0, 1.0,
+
+            0.0, 1.0, 0.0, 1.0,
+            1.0, 1.0, 0.0, 1.0,
+            2.0, 1.0, 0.0, 1.0,
+            3.0, 1.0, 0.0, 1.0,
+
+            0.0, 2.0, 0.0, 1.0,
+            1.0, 2.0, 0.0, 1.0,
+            2.0, 2.0, 0.0, 1.0,
+            3.0, 2.0, 0.0, 1.0,
+
+            0.0, 3.0, 0.0, 1.0,
+            1.0, 3.0, 0.0, 1.0,
+            2.0, 3.0, 0.0, 1.0,
+            3.0, 3.0, 0.0, 1.0
+        };
+    }
+
+    validate_spec(spec);
+    save_and_load(spec);
+}
+#endif

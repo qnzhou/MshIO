@@ -6,6 +6,7 @@
 #include "save_msh_format.h"
 #include "save_msh_nodes.h"
 #include "save_msh_patches.h"
+#include "save_msh_nanospline_format.h"
 
 #include <cassert>
 #include <fstream>

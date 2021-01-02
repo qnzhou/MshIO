@@ -55,7 +55,7 @@ struct DataHeader
 {
     std::vector<std::string> string_tags; // [view name, <interpolation scheeme>]
     std::vector<double> real_tags; // [time value]
-    std::vector<int> int_tags; // [time step, num fields, num entities, partition id]
+    std::vector<int> int_tags; // [time step, num fields, num entries, partition id]
 };
 
 struct DataEntry

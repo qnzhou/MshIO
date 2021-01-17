@@ -35,8 +35,15 @@ void save_data(std::ostream& out,
 
     if (is_binary) {
         if (version == "4.1") {
+            int32_t tag;
             for (const DataEntry& entry : data.entries) {
-                out.write(reinterpret_cast<const char*>(&entry.tag), sizeof(size_t));
+                // TODO:
+                // Based on trial and error, it seems Gmsh 4.7.1 still expect 32
+                // bits tag, which is inconsistent with their spec.  Maybe
+                // report a bug?
+                tag = static_cast<int32_t>(entry.tag);
+                out.write(reinterpret_cast<const char*>(&tag), 4);
+                // out.write(reinterpret_cast<const char*>(&entry.tag), sizeof(size_t));
                 if (is_element_node_data) {
                     out.write(
                         reinterpret_cast<const char*>(&entry.num_nodes_per_element), sizeof(int));

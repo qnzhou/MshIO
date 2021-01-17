@@ -41,7 +41,14 @@ namespace v41 {
 void load_data_entry(
     std::istream& in, DataEntry& entry, size_t fields_per_entry, bool is_element_node_data)
 {
-    in.read(reinterpret_cast<char*>(&entry.tag), sizeof(size_t));
+    // TODO:
+    // Based on trial and error, it seems Gmsh 4.7.1 still expect 32
+    // bits tag, which is inconsistent with their spec.  Maybe
+    // report a bug?
+    int32_t tag_32;
+    in.read(reinterpret_cast<char*>(&tag_32), 4);
+    entry.tag = static_cast<size_t>(tag_32);
+    // in.read(reinterpret_cast<char*>(&entry.tag), sizeof(size_t));
     if (is_element_node_data) {
         in.read(reinterpret_cast<char*>(&entry.num_nodes_per_element), sizeof(int));
         entry.data.resize(fields_per_entry * static_cast<size_t>(entry.num_nodes_per_element));

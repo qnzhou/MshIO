@@ -22,14 +22,14 @@ mshio::save_msh("output.msh", spec);
 that maps almost verbatim to the information stored in a MSH file.  Currently,
 the following sections are supported:
 
-| Section name | Description |
-|----:|---|
-| [Mesh format]       | Format header. |
-| [Nodes]             | 3D coordinates of nodes and (optionally) their parameterization coordinates. |
-| [Elements]          | A list of elements grouped by blocks. |
-| [Node data]         | Scalar/vector/tensor fields defined on nodes. |
-| [Element data]      | Scalar/vector/tensor fields defined on elements. |
-| [Element-node data] | Scalar/vector/tensor fields defined over each node of each element. |
+|        Section name | Description                                                                  |
+| ------------------: | ---------------------------------------------------------------------------- |
+|       [Mesh format] | Format header.                                                               |
+|             [Nodes] | 3D coordinates of nodes and (optionally) their parameterization coordinates. |
+|          [Elements] | A list of elements grouped by blocks.                                        |
+|         [Node data] | Scalar/vector/tensor fields defined on nodes.                                |
+|      [Element data] | Scalar/vector/tensor fields defined on elements.                             |
+| [Element-node data] | Scalar/vector/tensor fields defined over each node of each element.          |
 
 The follow sections are supported by MSH format, but not yet supported by MshIO
 (contribution welcomed):
@@ -215,23 +215,39 @@ fields.
 
 The following types are supported by MshIO:
 
-| Type ID | Name | Dim | # nodes |
-|:--:|----------------------------------|---|----|
-| 1  | 2-node line                      | 1 | 2  |
-| 2  | 3-node triangle                  | 2 | 3  |
-| 3  | 4-node quad                      | 2 | 4  |
-| 4  | 4-node tetrahedron               | 3 | 4  |
-| 5  | 8-node hexahedron                | 3 | 8  |
-| 6  | 6-node prism                     | 3 | 6  |
-| 7  | 5-node pyramid                   | 3 | 5  |
-| 8  | 3-node second order line         | 1 | 3  |
-| 9  | 6-node second order triangle     | 2 | 6  |
-| 10 | 9-node second order quad         | 2 | 9  |
-| 11 | 10-node second order tetrahedron | 3 | 10 |
-| 12 | 27-node second order hexahedron  | 3 | 27 |
-| 13 | 18-node second order prism       | 3 | 18 |
-| 14 | 14-node second order pyramid     | 3 | 14 |
-| 15 | 1-node point                     | 0 | 1  |
+| Type ID | Name                                     | Dim | # nodes |
+| :-----: | ---------------------------------------- | --- | ------- |
+|    1    | 2-node line                              | 1   | 2       |
+|    2    | 3-node triangle                          | 2   | 3       |
+|    3    | 4-node quad                              | 2   | 4       |
+|    4    | 4-node tetrahedron                       | 3   | 4       |
+|    5    | 8-node hexahedron                        | 3   | 8       |
+|    6    | 6-node prism                             | 3   | 6       |
+|    7    | 5-node pyramid                           | 3   | 5       |
+|    8    | 3-node second order line                 | 1   | 3       |
+|    9    | 6-node second order triangle             | 2   | 6       |
+|   10    | 9-node second order quad                 | 2   | 9       |
+|   11    | 10-node second order tetrahedron         | 3   | 10      |
+|   12    | 27-node second order hexahedron          | 3   | 27      |
+|   13    | 18-node second order prism               | 3   | 18      |
+|   14    | 14-node second order pyramid             | 3   | 14      |
+|   15    | 1-node point                             | 0   | 1       |
+|   16    | 8-node second order quadrangle           | 2   | 8       |
+|   17    | 20-node second order hexahedron          | 3   | 20      |
+|   18    | 15-node second order prism               | 3   | 15      |
+|   19    | 13-node second order pyramid             | 3   | 13      |
+|   20    | 9-node third order incomplete triangle   | 2   | 9       |
+|   21    | 10-node third order triangle             | 2   | 10      |
+|   22    | 12-node fourth order incomplete triangle | 2   | 12      |
+|   23    | 15-node fourth order triangle            | 2   | 15      |
+|   24    | 15-node fifth order incomplete triangle  | 2   | 15      |
+|   25    | 21-node fifth order complete triangle    | 2   | 21      |
+|   26    | 4-node third order edge                  | 1   | 4       |
+|   27    | 5-node fourth order edge                 | 1   | 5       |
+|   28    | 6-node fifth order edge                  | 1   | 6       |
+|   29    | 20-node third order tetrahedron          | 3   | 20      |
+|   30    | 35-node fourth order tetrahedron         | 3   | 35      |
+|   31    | 56-node fifth order tetrahedron          | 3   | 56      |
 
 
 [MSH format]: https://gmsh.info/doc/texinfo/gmsh.html#MSH-file-format

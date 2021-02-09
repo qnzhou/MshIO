@@ -7,6 +7,7 @@
 #include "load_msh_nanospline_format.h"
 #include "load_msh_nodes.h"
 #include "load_msh_patches.h"
+#include "load_msh_physical_groups.h"
 #include "load_msh_post_process.h"
 
 #include <cassert>
@@ -36,6 +37,8 @@ MshSpec load_msh(std::istream& in)
         end_str = "$End" + buf.substr(1);
         if (buf == "$MeshFormat") {
             load_mesh_format(in, spec);
+        } else if (buf == "$PhysicalNames") {
+            load_physical_groups(in, spec);
         } else if (buf == "$Nodes") {
             load_nodes(in, spec);
         } else if (buf == "$Elements") {

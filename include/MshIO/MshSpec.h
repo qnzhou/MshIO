@@ -71,11 +71,19 @@ struct Data
     std::vector<DataEntry> entries;
 };
 
+struct PhysicalGroup
+{
+    int dim = 0;
+    int tag = 0;
+    std::string name;
+};
+
 struct MshSpec
 {
     MeshFormat mesh_format;
     Nodes nodes;
     Elements elements;
+    std::vector<PhysicalGroup> physical_groups;
     std::vector<Data> node_data;
     std::vector<Data> element_data;
     std::vector<Data> element_node_data;

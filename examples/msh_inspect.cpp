@@ -14,6 +14,14 @@ int main(int argc, char** argv)
     std::cout << "sizeof(int): " << sizeof(int) << std::endl;
     std::cout << "sizeof(size_t) " << sizeof(size_t) << std::endl;
     std::cout << "sizeof(double) " << sizeof(double) << std::endl;
+
+    std::cout << "Num physical groups: " << spec.physical_groups.size() << std::endl;
+    for (const auto& group: spec.physical_groups) {
+        std::cout << "  group dim: " << group.dim << std::endl;
+        std::cout << "  group tag: " << group.tag << std::endl;
+        std::cout << "  group name: " << std::quoted(group.name) << std::endl;
+    }
+
     std::cout << "Num nodes: " << spec.nodes.num_nodes << std::endl;
     std::cout << "Num node blocks: " << spec.nodes.num_entity_blocks << std::endl;
     std::cout << "min node tag: " << spec.nodes.min_node_tag << std::endl;

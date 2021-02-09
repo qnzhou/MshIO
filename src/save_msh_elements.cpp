@@ -19,17 +19,14 @@ namespace v41 {
 void save_elements_ascii(std::ostream& out, const MshSpec& spec)
 {
     const Elements& elements = spec.elements;
-    out << elements.num_entity_blocks << std::endl;
-    out << elements.num_elements << std::endl;
-    out << elements.min_element_tag << " " << elements.max_element_tag << std::endl;
+    out << elements.num_entity_blocks << " " << elements.num_elements << " "
+        << elements.min_element_tag << " " << elements.max_element_tag << std::endl;
 
     for (size_t i = 0; i < elements.num_entity_blocks; i++) {
         const ElementBlock& block = elements.entity_blocks[i];
 
-        out << block.entity_dim << std::endl;
-        out << block.entity_tag << std::endl;
-        out << block.element_type << std::endl;
-        out << block.num_elements_in_block << std::endl;
+        out << block.entity_dim << " " << block.entity_tag << " "
+            << block.element_type << " " << block.num_elements_in_block << std::endl;
 
         const size_t n = nodes_per_element(block.element_type);
         for (size_t j = 0; j < block.num_elements_in_block; j++) {

@@ -13,9 +13,8 @@ namespace v41 {
 void save_nodes_ascii(std::ostream& out, const MshSpec& spec)
 {
     const Nodes& nodes = spec.nodes;
-    out << nodes.num_entity_blocks << std::endl;
-    out << nodes.num_nodes << std::endl;
-    out << nodes.min_node_tag << " " << nodes.max_node_tag << std::endl;
+    out << nodes.num_entity_blocks << " " << nodes.num_nodes << " "
+        << nodes.min_node_tag << " " << nodes.max_node_tag << std::endl;
 
     for (size_t i = 0; i < nodes.num_entity_blocks; i++) {
         const NodeBlock& block = nodes.entity_blocks[i];

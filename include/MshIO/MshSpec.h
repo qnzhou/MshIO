@@ -71,6 +71,57 @@ struct Data
     std::vector<DataEntry> entries;
 };
 
+struct PointEntity {
+    int tag = 0;
+    double x = 0.0;
+    double y = 0.0;
+    double z = 0.0;
+    std::vector<int> physical_group_tags;
+};
+
+struct CurveEntity {
+    int tag = 0;
+    double min_x = 0.0;
+    double min_y = 0.0;
+    double min_z = 0.0;
+    double max_x = 0.0;
+    double max_y = 0.0;
+    double max_z = 0.0;
+    std::vector<int> physical_group_tags;
+    std::vector<int> boundary_point_tags;
+};
+
+struct SurfaceEntity {
+    int tag = 0;
+    double min_x = 0.0;
+    double min_y = 0.0;
+    double min_z = 0.0;
+    double max_x = 0.0;
+    double max_y = 0.0;
+    double max_z = 0.0;
+    std::vector<int> physical_group_tags;
+    std::vector<int> boundary_curve_tags;
+};
+
+struct VolumeEntity {
+    int tag = 0;
+    double min_x = 0.0;
+    double min_y = 0.0;
+    double min_z = 0.0;
+    double max_x = 0.0;
+    double max_y = 0.0;
+    double max_z = 0.0;
+    std::vector<int> physical_group_tags;
+    std::vector<int> boundary_surface_tags;
+};
+
+struct Entities {
+    std::vector<PointEntity> points;
+    std::vector<CurveEntity> curves;
+    std::vector<SurfaceEntity> surfaces;
+    std::vector<VolumeEntity> volumes;
+};
+
 struct PhysicalGroup
 {
     int dim = 0;
@@ -83,6 +134,7 @@ struct MshSpec
     MeshFormat mesh_format;
     Nodes nodes;
     Elements elements;
+    Entities entities;
     std::vector<PhysicalGroup> physical_groups;
     std::vector<Data> node_data;
     std::vector<Data> element_data;

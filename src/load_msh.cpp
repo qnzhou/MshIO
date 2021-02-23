@@ -3,6 +3,7 @@
 #include "load_msh_curves.h"
 #include "load_msh_data.h"
 #include "load_msh_elements.h"
+#include "load_msh_entities.h"
 #include "load_msh_format.h"
 #include "load_msh_nanospline_format.h"
 #include "load_msh_nodes.h"
@@ -37,6 +38,8 @@ MshSpec load_msh(std::istream& in)
         end_str = "$End" + buf.substr(1);
         if (buf == "$MeshFormat") {
             load_mesh_format(in, spec);
+        } else if (buf == "$Entities") {
+            load_entities(in, spec);
         } else if (buf == "$PhysicalNames") {
             load_physical_groups(in, spec);
         } else if (buf == "$Nodes") {

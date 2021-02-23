@@ -15,6 +15,103 @@ int main(int argc, char** argv)
     std::cout << "sizeof(size_t) " << sizeof(size_t) << std::endl;
     std::cout << "sizeof(double) " << sizeof(double) << std::endl;
 
+    std::cout << "Num point entities: " << spec.entities.points.size() << std::endl;
+    for (const auto& point: spec.entities.points) {
+        std::cout << "  entity tag: " << point.tag << std::endl;
+        std::cout << "  entity coordinates: " << point.x <<
+            " " << point.y << " " << point.z << std::endl;
+        size_t num_groups = point.physical_group_tags.size();
+        std::cout << "  Num physical groups: " << num_groups << std::endl;
+        if (num_groups > 0) {
+            std::cout << "    ";
+            for (size_t i = 0; i < num_groups; i++) {
+                std::cout << point.physical_group_tags[i] << " ";
+            }
+            std::cout << std::endl;
+        }
+    }
+
+    std::cout << "Num curve entities: " << spec.entities.curves.size() << std::endl;
+    for (const auto& curve: spec.entities.curves) {
+        std::cout << "  entity tag: " << curve.tag << std::endl;
+        std::cout << "  bounding box min: " << curve.min_x <<
+            " " << curve.min_y << " " << curve.min_z << std::endl;
+        std::cout << "  bounding box max: " << curve.max_x <<
+            " " << curve.max_y << " " << curve.max_z << std::endl;
+        size_t num_groups = curve.physical_group_tags.size();
+        std::cout << "  Num physical groups: " << num_groups << std::endl;
+        if (num_groups > 0) {
+            std::cout << "    ";
+            for (size_t i = 0; i < num_groups; i++) {
+                std::cout << curve.physical_group_tags[i] << " ";
+            }
+            std::cout << std::endl;
+        }
+        size_t num_bounds = curve.boundary_point_tags.size();
+        std::cout << "  Num boundary points: " << num_bounds << std::endl;
+        if (num_bounds > 0) {
+            std::cout << "    ";
+            for (size_t i = 0; i < num_bounds; i++) {
+                std::cout << curve.boundary_point_tags[i] << " ";
+            }
+            std::cout << std::endl;
+        }
+    }
+
+    std::cout << "Num surface entities: " << spec.entities.surfaces.size() << std::endl;
+    for (const auto& surface: spec.entities.surfaces) {
+        std::cout << "  entity tag: " << surface.tag << std::endl;
+        std::cout << "  bounding box min: " << surface.min_x <<
+            " " << surface.min_y << " " << surface.min_z << std::endl;
+        std::cout << "  bounding box max: " << surface.max_x <<
+            " " << surface.max_y << " " << surface.max_z << std::endl;
+        size_t num_groups = surface.physical_group_tags.size();
+        std::cout << "  Num physical groups: " << num_groups << std::endl;
+        if (num_groups > 0) {
+            std::cout << "    ";
+            for (size_t i = 0; i < num_groups; i++) {
+                std::cout << surface.physical_group_tags[i] << " ";
+            }
+            std::cout << std::endl;
+        }
+        size_t num_bounds = surface.boundary_curve_tags.size();
+        std::cout << "  Num boundary curves: " << num_bounds << std::endl;
+        if (num_bounds > 0) {
+            std::cout << "    ";
+            for (size_t i = 0; i < num_bounds; i++) {
+                std::cout << surface.boundary_curve_tags[i] << " ";
+            }
+            std::cout << std::endl;
+        }
+    }
+
+    std::cout << "Num volume entities: " << spec.entities.volumes.size() << std::endl;
+    for (const auto& volume: spec.entities.volumes) {
+        std::cout << "  entity tag: " << volume.tag << std::endl;
+        std::cout << "  bounding box min: " << volume.min_x <<
+            " " << volume.min_y << " " << volume.min_z << std::endl;
+        std::cout << "  bounding box max: " << volume.max_x <<
+            " " << volume.max_y << " " << volume.max_z << std::endl;
+        size_t num_groups = volume.physical_group_tags.size();
+        std::cout << "  Num physical groups: " << num_groups << std::endl;
+        if (num_groups > 0) {
+            std::cout << "    ";
+            for (size_t i = 0; i < num_groups; i++) {
+                std::cout << volume.physical_group_tags[i] << " ";
+            }
+            std::cout << std::endl;
+        }
+        size_t num_bounds = volume.boundary_surface_tags.size();
+        std::cout << "  Num boundary surfaces: " << num_bounds << std::endl;
+        if (num_bounds > 0) {
+            std::cout << "    ";
+            for (size_t i = 0; i < num_bounds; i++) {
+                std::cout << volume.boundary_surface_tags[i] << " ";
+            }
+            std::cout << std::endl;
+        }
+    }
+
     std::cout << "Num physical groups: " << spec.physical_groups.size() << std::endl;
     for (const auto& group: spec.physical_groups) {
         std::cout << "  group dim: " << group.dim << std::endl;

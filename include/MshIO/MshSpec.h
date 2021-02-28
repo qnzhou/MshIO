@@ -120,6 +120,11 @@ struct Entities {
     std::vector<CurveEntity> curves;
     std::vector<SurfaceEntity> surfaces;
     std::vector<VolumeEntity> volumes;
+
+    bool empty() const {
+        return points.size() == 0 && curves.size() == 0 && surfaces.size() == 0
+            || volumes.size() == 0;
+    }
 };
 
 struct PhysicalGroup

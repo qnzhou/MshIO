@@ -3,6 +3,7 @@
 #include "save_msh_curves.h"
 #include "save_msh_data.h"
 #include "save_msh_elements.h"
+#include "save_msh_entities.h"
 #include "save_msh_format.h"
 #include "save_msh_nodes.h"
 #include "save_msh_patches.h"
@@ -19,6 +20,9 @@ void save_msh(std::ostream& out, const MshSpec& spec)
     save_mesh_format(out, spec);
     if (spec.physical_groups.size() > 0) {
         save_physical_groups(out, spec);
+    }
+    if (!spec.entities.empty()) {
+        save_entities(out, spec);
     }
     if (spec.nodes.num_nodes > 0) {
         save_nodes(out, spec);

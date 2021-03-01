@@ -27,6 +27,7 @@ the following sections are supported:
 |       [Mesh format] | Format header.                                                               |
 |             [Nodes] | 3D coordinates of nodes and (optionally) their parameterization coordinates. |
 |          [Elements] | A list of elements grouped by blocks.                                        |
+|          [Entities] | The boundary representation (BRep) of the model.                             |
 |         [Node data] | Scalar/vector/tensor fields defined on nodes.                                |
 |      [Element data] | Scalar/vector/tensor fields defined on elements.                             |
 | [Element-node data] | Scalar/vector/tensor fields defined over each node of each element.          |
@@ -34,7 +35,6 @@ the following sections are supported:
 The follow sections are supported by MSH format, but not yet supported by MshIO
 (contribution welcomed):
 * Physical names
-* Entities
 * Partitioned entities
 * Periodic
 * Ghost elements
@@ -157,6 +157,32 @@ i.e. Each element entry consists of an element tag followed by `n` node tags,
 where `n` is the number of nodes corresponding determined by the element type.
 See the [supported element types](#Supported-element-types) table.
 
+### Entities
+
+Entities make up the boundary representation of the mesh model. Nodes and
+elements belong to specific entities. The four types of entities are points,
+lines, surfaces and volumes. Higher order entities are bounded by lower ones
+(e.g. volumes are bounded by surfaces). Entities also contain bounding box and
+physical group information.
+
+```c++
+auto& entities = spec.entities;
+auto& point_entities = entities.points;
+auto& curve_entities = entities.curves;
+auto& surface_entities = entities.surfaces;
+auto& volume_entities = entities.volumes;
+
+// look up the physical groups of an element block
+auto& block = elements.entity_blocks[i];
+assert(block.entity_dim == 2); // surface entity (0 for point, 1 for curve...)
+auto surface_entity = std::find_if(surface_entities.begin(),
+    surface_entities.end(), [&](const mshio::SurfaceEntity& s) {
+    return s.tag == block.entity_tag;
+});
+assert(surface_entity != surface_entities.end());
+auto& physical_groups = surface_entity->physical_group_tags;
+```
+
 ### Post-processing data
 
 One of main advantage of MSH format is its support for storing post-processing
@@ -257,3 +283,4 @@ The following types are supported by MshIO:
 [Node data]: #Post-processing-data
 [Element data]: #Post-processing-data
 [Element-node data]: #Post-processing-data
+[Entities]: #Entities

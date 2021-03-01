@@ -123,7 +123,7 @@ struct Entities {
 
     bool empty() const {
         return points.size() == 0 && curves.size() == 0 && surfaces.size() == 0
-            || volumes.size() == 0;
+            && volumes.size() == 0;
     }
 };
 

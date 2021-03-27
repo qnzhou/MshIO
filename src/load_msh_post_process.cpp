@@ -1,7 +1,7 @@
 #include "load_msh_post_process.h"
 #include "element_utils.h"
 
-#include <MshIO/MshSpec.h>
+#include <mshio/MshSpec.h>
 
 namespace mshio {
 namespace v22 {

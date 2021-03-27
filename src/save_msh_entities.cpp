@@ -1,7 +1,7 @@
 #include "save_msh_entities.h"
 
-#include <MshIO/MshSpec.h>
-#include <MshIO/exception.h>
+#include <mshio/MshSpec.h>
+#include <mshio/exception.h>
 
 #include <algorithm>
 #include <cassert>

@@ -1,4 +1,4 @@
-#include <MshIO/MshSpec.h>
+#include <mshio/MshSpec.h>
 
 #include "load_msh_curves.h"
 #include "load_msh_data.h"

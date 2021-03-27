@@ -1,6 +1,6 @@
 #include "save_msh_format.h"
 
-#include <MshIO/MshSpec.h>
+#include <mshio/MshSpec.h>
 
 #include <ostream>
 

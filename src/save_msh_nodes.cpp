@@ -1,7 +1,7 @@
 #include "save_msh_nodes.h"
 
-#include <MshIO/MshSpec.h>
-#include <MshIO/exception.h>
+#include <mshio/MshSpec.h>
+#include <mshio/exception.h>
 
 #include <cassert>
 #include <ostream>

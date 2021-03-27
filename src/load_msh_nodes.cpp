@@ -1,8 +1,8 @@
 #include "load_msh_nodes.h"
 #include "io_utils.h"
 
-#include <MshIO/MshSpec.h>
-#include <MshIO/exception.h>
+#include <mshio/MshSpec.h>
+#include <mshio/exception.h>
 
 #include <algorithm>
 #include <cassert>

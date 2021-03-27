@@ -4,7 +4,7 @@
 # To add MshIO as a dependency:
 #
 #   add_subdirectory(MshIO)
-#   target_link_libraries(your_target MshIO::MshIO)
+#   target_link_libraries(your_target mshio::mshio)
 #
 # ============================================================================
 
@@ -21,13 +21,13 @@ include(FetchContent)
 include(cmake/sanitizer-cmake.cmake)
 
 
-file(GLOB INC_FILES "${PROJECT_SOURCE_DIR}/include/MshIO/*.h")
+file(GLOB INC_FILES "${PROJECT_SOURCE_DIR}/include/mshio/*.h")
 file(GLOB SRC_FILES "${PROJECT_SOURCE_DIR}/src/*.cpp")
 
 
 add_library(mshio STATIC ${SRC_FILES})
 target_include_directories(mshio PUBLIC ${PROJECT_SOURCE_DIR}/include)
-add_library(MshIO::MshIO ALIAS mshio)
+add_library(mshio::mshio ALIAS mshio)
 
 
 if (MSHIO_EXT_NANOSPLINE)
@@ -37,7 +37,7 @@ endif()
 
 if (MSHIO_BUILD_EXAMPLES)
     add_executable(msh_inspect ${PROJECT_SOURCE_DIR}/examples/msh_inspect.cpp)
-    target_link_libraries(msh_inspect PRIVATE MshIO::MshIO)
+    target_link_libraries(msh_inspect PRIVATE mshio::mshio)
 endif()
 
 
@@ -48,7 +48,7 @@ if (MSHIO_BUILD_TESTS)
 
     file(GLOB TEST_FILES "${PROJECT_SOURCE_DIR}/tests/*.cpp")
     add_executable(test_MshIO ${TEST_FILES})
-    target_link_libraries(test_MshIO MshIO::MshIO Catch2::Catch2)
+    target_link_libraries(test_MshIO mshio::mshio Catch2::Catch2)
     target_compile_definitions(test_MshIO PRIVATE
         MSHIO_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
     catch_discover_tests(test_MshIO)

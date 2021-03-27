@@ -1,6 +1,6 @@
 #pragma ocne
 
-#include <MshIO/MshSpec.h>
+#include <mshio/MshSpec.h>
 
 #include <ostream>
 

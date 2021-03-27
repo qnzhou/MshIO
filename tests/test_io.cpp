@@ -1,7 +1,7 @@
 #include <catch2/catch.hpp>
 #include <sstream>
 
-#include <MshIO/mshio.h>
+#include <mshio/mshio.h>
 
 namespace {
 

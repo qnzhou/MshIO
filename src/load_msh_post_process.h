@@ -1,6 +1,6 @@
 #pragma once
 
-#include <MshIO/MshSpec.h>
+#include <mshio/MshSpec.h>
 
 namespace mshio {
 

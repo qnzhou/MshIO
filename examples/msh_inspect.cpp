@@ -1,4 +1,4 @@
-#include <MshIO/mshio.h>
+#include <mshio/mshio.h>
 #include <iostream>
 #include <iomanip>
 

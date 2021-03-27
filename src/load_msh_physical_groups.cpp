@@ -1,6 +1,6 @@
 #include "load_msh_physical_groups.h"
 
-#include <MshIO/MshSpec.h>
+#include <mshio/MshSpec.h>
 
 #include <cassert>
 #include <fstream>

@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-#include <MshIO/MshSpecExt.h>
+#include <mshio/MshSpecExt.h>
 
 namespace mshio {
 

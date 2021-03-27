@@ -1,8 +1,8 @@
 #include "load_msh_format.h"
 #include "io_utils.h"
 
-#include <MshIO/MshSpec.h>
-#include <MshIO/exception.h>
+#include <mshio/MshSpec.h>
+#include <mshio/exception.h>
 
 #include <cassert>
 #include <fstream>

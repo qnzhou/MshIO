@@ -1,6 +1,6 @@
 #pragma once
 
-#include <MshIO/exception.h>
+#include <mshio/exception.h>
 
 #include <sstream>
 

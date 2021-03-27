@@ -1,5 +1,5 @@
 #pragma once
-#include <MshIO/MshSpec.h>
+#include <mshio/MshSpec.h>
 #include <iostream>
 
 namespace mshio {

@@ -3,6 +3,8 @@
 
 #include <mshio/MshSpec.h>
 
+#include <limits>
+
 namespace mshio {
 namespace v22 {
 

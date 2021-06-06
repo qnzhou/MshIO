@@ -3,6 +3,7 @@
 
 #include <mshio/MshSpec.h>
 
+#include <cassert>
 #include <limits>
 
 namespace mshio {

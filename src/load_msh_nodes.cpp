@@ -9,6 +9,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <limits>
 
 namespace mshio {
 namespace v41 {

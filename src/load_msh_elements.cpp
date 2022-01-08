@@ -48,7 +48,7 @@ void load_elements_ascii(std::istream& in, MshSpec& spec)
 
 void load_elements_binary(std::istream& in, MshSpec& spec)
 {
-    eat_white_space(in);
+    eat_white_space(in, 1);
     Elements& elements = spec.elements;
     in.read(reinterpret_cast<char*>(&elements.num_entity_blocks), sizeof(size_t));
     in.read(reinterpret_cast<char*>(&elements.num_elements), sizeof(size_t));
@@ -135,7 +135,7 @@ void load_elements_binary(std::istream& in, MshSpec& spec)
     Elements& elements = spec.elements;
     in >> elements.num_elements;
     elements.entity_blocks.reserve(elements.num_elements);
-    eat_white_space(in);
+    eat_white_space(in, 1);
 
     std::vector<int32_t> tags, node_ids;
     int32_t min_tag = std::numeric_limits<int32_t>::max();

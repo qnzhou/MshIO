@@ -97,7 +97,7 @@ void load_data(std::istream& in,
     data.entries.resize(num_entries);
 
     if (is_binary) {
-        eat_white_space(in);
+        eat_white_space(in, 1);
         if (version == "4.1") {
             for (size_t i = 0; i < num_entries; i++) {
                 v41::load_data_entry(in, data.entries[i], fields_per_entry, is_element_node_data);

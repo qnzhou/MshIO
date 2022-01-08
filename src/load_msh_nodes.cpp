@@ -53,7 +53,7 @@ void load_nodes_ascii(std::istream& in, MshSpec& spec)
 void load_nodes_binary(std::istream& in, MshSpec& spec)
 {
     Nodes& nodes = spec.nodes;
-    eat_white_space(in);
+    eat_white_space(in, 1);
     in.read(reinterpret_cast<char*>(&nodes.num_entity_blocks), sizeof(size_t));
     in.read(reinterpret_cast<char*>(&nodes.num_nodes), sizeof(size_t));
     in.read(reinterpret_cast<char*>(&nodes.min_node_tag), sizeof(size_t));
@@ -135,7 +135,7 @@ void load_nodes_binary(std::istream& in, MshSpec& spec)
 
     block.tags.resize(block.num_nodes_in_block);
     block.data.resize(block.num_nodes_in_block * 3);
-    eat_white_space(in);
+    eat_white_space(in, 1);
     for (size_t i = 0; i < block.num_nodes_in_block; i++) {
         assert(in.good());
         int tag;

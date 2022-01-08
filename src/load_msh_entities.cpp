@@ -113,7 +113,7 @@ void load_entities_ascii(std::istream& in, MshSpec& spec)
 
 void load_entities_binary(std::istream& in, MshSpec& spec)
 {
-    eat_white_space(in);
+    eat_white_space(in, 1);
     size_t num_points, num_curves, num_surfaces, num_volumes;
     in.read(reinterpret_cast<char*>(&num_points), sizeof(size_t));
     in.read(reinterpret_cast<char*>(&num_curves), sizeof(size_t));

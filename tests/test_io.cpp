@@ -7,7 +7,8 @@ namespace {
 
 using namespace mshio;
 
-void ASSERT_SAME_NODES(const MshSpec& spec1, const MshSpec& spec2) {
+void ASSERT_SAME_NODES(const MshSpec& spec1, const MshSpec& spec2)
+{
     const auto& nodes1 = spec1.nodes;
     const auto& nodes2 = spec2.nodes;
 
@@ -17,7 +18,7 @@ void ASSERT_SAME_NODES(const MshSpec& spec1, const MshSpec& spec2) {
     REQUIRE(nodes1.max_node_tag == nodes2.max_node_tag);
 
     size_t N = nodes1.num_entity_blocks;
-    for (size_t i=0; i<N; i++) {
+    for (size_t i = 0; i < N; i++) {
         const auto& block1 = nodes1.entity_blocks[i];
         const auto& block2 = nodes2.entity_blocks[i];
 
@@ -29,7 +30,8 @@ void ASSERT_SAME_NODES(const MshSpec& spec1, const MshSpec& spec2) {
     }
 }
 
-void ASSERT_SAME_ELEMENTS(const MshSpec& spec1, const MshSpec& spec2) {
+void ASSERT_SAME_ELEMENTS(const MshSpec& spec1, const MshSpec& spec2)
+{
     const auto& elements1 = spec1.elements;
     const auto& elements2 = spec2.elements;
 
@@ -39,7 +41,7 @@ void ASSERT_SAME_ELEMENTS(const MshSpec& spec1, const MshSpec& spec2) {
     REQUIRE(elements1.max_element_tag == elements2.max_element_tag);
 
     size_t M = elements1.num_entity_blocks;
-    for (size_t i=0; i<M; i++) {
+    for (size_t i = 0; i < M; i++) {
         const auto& block1 = elements1.entity_blocks[i];
         const auto& block2 = elements2.entity_blocks[i];
 
@@ -51,7 +53,87 @@ void ASSERT_SAME_ELEMENTS(const MshSpec& spec1, const MshSpec& spec2) {
     }
 }
 
-void ASSERT_SAME_CURVES(const MshSpec& spec1, const MshSpec& spec2) {
+void ASSERT_SAME_NODE_DATA(const MshSpec& spec1, const MshSpec& spec2)
+{
+    const auto& node_data1 = spec1.node_data;
+    const auto& node_data2 = spec2.node_data;
+    REQUIRE(node_data1.size() == node_data2.size());
+    const size_t K = node_data1.size();
+
+    for (size_t i = 0; i < K; i++) {
+        const auto& data1 = node_data1[i];
+        const auto& data2 = node_data2[i];
+
+        REQUIRE(data1.header.string_tags == data2.header.string_tags);
+        REQUIRE(data1.header.real_tags == data2.header.real_tags);
+        REQUIRE(data1.header.int_tags == data2.header.int_tags);
+        REQUIRE(data1.entries.size() == data2.entries.size());
+
+        const size_t num_entries = data1.entries.size();
+        for (size_t j = 0; j < num_entries; j++) {
+            const auto& entry1 = data1.entries[j];
+            const auto& entry2 = data2.entries[j];
+            REQUIRE(entry1.tag == entry2.tag);
+            REQUIRE(entry1.data == entry2.data);
+        }
+    }
+}
+
+void ASSERT_SAME_ELEMENT_DATA(const MshSpec& spec1, const MshSpec& spec2)
+{
+    const auto& elem_data1 = spec1.element_data;
+    const auto& elem_data2 = spec2.element_data;
+    REQUIRE(elem_data1.size() == elem_data2.size());
+    const size_t K = elem_data1.size();
+
+    for (size_t i = 0; i < K; i++) {
+        const auto& data1 = elem_data1[i];
+        const auto& data2 = elem_data2[i];
+
+        REQUIRE(data1.header.string_tags == data2.header.string_tags);
+        REQUIRE(data1.header.real_tags == data2.header.real_tags);
+        REQUIRE(data1.header.int_tags == data2.header.int_tags);
+        REQUIRE(data1.entries.size() == data2.entries.size());
+
+        const size_t num_entries = data1.entries.size();
+        for (size_t j = 0; j < num_entries; j++) {
+            const auto& entry1 = data1.entries[j];
+            const auto& entry2 = data2.entries[j];
+            REQUIRE(entry1.tag == entry2.tag);
+            REQUIRE(entry1.data == entry2.data);
+        }
+    }
+}
+
+void ASSERT_SAME_ELEMENT_NODE_DATA(const MshSpec& spec1, const MshSpec& spec2)
+{
+    const auto& elem_data1 = spec1.element_node_data;
+    const auto& elem_data2 = spec2.element_node_data;
+    REQUIRE(elem_data1.size() == elem_data2.size());
+    const size_t K = elem_data1.size();
+
+    for (size_t i = 0; i < K; i++) {
+        const auto& data1 = elem_data1[i];
+        const auto& data2 = elem_data2[i];
+
+        REQUIRE(data1.header.string_tags == data2.header.string_tags);
+        REQUIRE(data1.header.real_tags == data2.header.real_tags);
+        REQUIRE(data1.header.int_tags == data2.header.int_tags);
+        REQUIRE(data1.entries.size() == data2.entries.size());
+
+        const size_t num_entries = data1.entries.size();
+        for (size_t j = 0; j < num_entries; j++) {
+            const auto& entry1 = data1.entries[j];
+            const auto& entry2 = data2.entries[j];
+            REQUIRE(entry1.tag == entry2.tag);
+            REQUIRE(entry1.num_nodes_per_element == entry2.num_nodes_per_element);
+            REQUIRE(entry1.data == entry2.data);
+        }
+    }
+}
+
+void ASSERT_SAME_CURVES(const MshSpec& spec1, const MshSpec& spec2)
+{
 #ifdef MSHIO_EXT_NANOSPLINE
     const auto& curves1 = spec1.curves;
     const auto& curves2 = spec2.curves;
@@ -59,7 +141,7 @@ void ASSERT_SAME_CURVES(const MshSpec& spec1, const MshSpec& spec2) {
     REQUIRE(curves1.size() == curves2.size());
 
     const size_t N = curves1.size();
-    for (size_t i=0; i<N; i++) {
+    for (size_t i = 0; i < N; i++) {
         const auto& c1 = curves1[i];
         const auto& c2 = curves2[i];
 
@@ -74,32 +156,31 @@ void ASSERT_SAME_CURVES(const MshSpec& spec1, const MshSpec& spec2) {
 #endif
 }
 
-void ASSERT_SAME(const MshSpec& spec1, const MshSpec& spec2) {
+void ASSERT_SAME(const MshSpec& spec1, const MshSpec& spec2)
+{
     ASSERT_SAME_NODES(spec1, spec2);
     ASSERT_SAME_ELEMENTS(spec1, spec2);
+    ASSERT_SAME_NODE_DATA(spec1, spec2);
+    ASSERT_SAME_ELEMENT_DATA(spec1, spec2);
+    ASSERT_SAME_ELEMENT_NODE_DATA(spec1, spec2);
 
     ASSERT_SAME_CURVES(spec1, spec2);
 }
 
-void save_and_load(MshSpec& spec) {
+void save_and_load(MshSpec& spec)
+{
     std::stringstream contents;
-    SECTION("v4.1") {
+    SECTION("v4.1")
+    {
         spec.mesh_format.version = "4.1";
-        SECTION("ASCII") {
-            spec.mesh_format.file_type = 0;
-        }
-        SECTION("Binary") {
-            spec.mesh_format.file_type = 1;
-        }
+        SECTION("ASCII") { spec.mesh_format.file_type = 0; }
+        SECTION("Binary") { spec.mesh_format.file_type = 1; }
     }
-    SECTION("v2.2") {
+    SECTION("v2.2")
+    {
         spec.mesh_format.version = "2.2";
-        SECTION("ASCII") {
-            spec.mesh_format.file_type = 0;
-        }
-        SECTION("Binary") {
-            spec.mesh_format.file_type = 1;
-        }
+        SECTION("ASCII") { spec.mesh_format.file_type = 0; }
+        SECTION("Binary") { spec.mesh_format.file_type = 1; }
     }
 
     validate_spec(spec);
@@ -402,6 +483,93 @@ TEST_CASE("mixed element", "[mixed][io]")
     save_and_load(spec);
 }
 
+TEST_CASE("node data")
+{
+    using namespace mshio;
+
+    MshSpec spec;
+    spec.mesh_format.file_type = 1;
+    auto& node_data = spec.node_data;
+
+    Data attr;
+    attr.header.string_tags = {"test"};
+    attr.header.real_tags = {0};
+    attr.header.int_tags = {0, 1, 2, 0};
+
+    DataEntry entry1;
+    entry1.tag = 1;
+    entry1.data = {1};
+
+    DataEntry entry2;
+    entry2.tag = 2;
+    entry2.data = {2};
+
+    attr.entries.push_back(entry1);
+    attr.entries.push_back(entry2);
+
+    node_data.push_back(attr);
+
+    validate_spec(spec);
+    save_and_load(spec);
+}
+
+TEST_CASE("element data")
+{
+    using namespace mshio;
+
+    MshSpec spec;
+    spec.mesh_format.file_type = 1;
+
+    auto add_node_data = [&](const std::string& name, const auto& data) {
+        auto& node_data = spec.node_data;
+
+        Data attr;
+        attr.header.string_tags = {name};
+        attr.header.real_tags = {0};
+        attr.header.int_tags = {0, 1, static_cast<int>(data.size()), 0, 3};
+
+        size_t tag = 9;
+        for (const auto& value : data) {
+            DataEntry entry;
+            entry.tag = tag;
+            entry.data = {value};
+            tag++;
+            attr.entries.push_back(std::move(entry));
+        }
+        node_data.push_back(attr);
+    };
+
+    auto add_element_data = [&](const std::string& name, const auto& data) {
+        auto& elem_data = spec.element_data;
+
+        Data attr;
+        attr.header.string_tags = {name};
+        attr.header.real_tags = {0};
+        attr.header.int_tags = {0, 1, static_cast<int>(data.size()), 0, 10};
+
+        size_t tag = 10;
+        for (const auto& value : data) {
+            DataEntry entry;
+            entry.tag = tag;
+            entry.data = {value};
+            tag++;
+            attr.entries.push_back(std::move(entry));
+        }
+
+        elem_data.push_back(attr);
+    };
+
+    std::vector<double> values = {0, 1, 2, 3};
+    add_node_data("tv index", values);
+
+    std::vector<double> ids = {1.0};
+    add_element_data("t index", ids);
+
+    validate_spec(spec);
+    save_and_load(spec);
+}
+
+
 #ifdef MSHIO_EXT_NANOSPLINE
 TEST_CASE("NanoSpline extension", "[nanospline][ext][io]")
 {
@@ -419,12 +587,7 @@ TEST_CASE("NanoSpline extension", "[nanospline][ext][io]")
         curve.num_knots = 0;
         curve.with_weights = 0;
 
-        curve.data = {
-            0.0, 0.0, 0.0,
-            1.0, 0.0, 0.0,
-            0.0, 1.0, 0.0,
-            1.0, 1.0, 0.0
-        };
+        curve.data = {0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0};
     }
 
     {
@@ -438,11 +601,7 @@ TEST_CASE("NanoSpline extension", "[nanospline][ext][io]")
         curve.with_weights = 1;
 
         curve.data = {
-            0.0, 0.0, 0.0, 1.0,
-            1.0, 0.0, 0.0, 1.0,
-            0.0, 1.0, 0.0, 1.0,
-            1.0, 1.0, 0.0, 1.0
-        };
+            0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 1.0, 0.0, 1.0};
     }
 
     {
@@ -457,27 +616,73 @@ TEST_CASE("NanoSpline extension", "[nanospline][ext][io]")
         patch.num_v_knots = 0;
         patch.with_weights = 1;
 
-        patch.data = {
-            0.0, 0.0, 0.0, 1.0,
-            1.0, 0.0, 0.0, 1.0,
-            2.0, 0.0, 0.0, 1.0,
-            3.0, 0.0, 0.0, 1.0,
+        patch.data = {0.0,
+            0.0,
+            0.0,
+            1.0,
+            1.0,
+            0.0,
+            0.0,
+            1.0,
+            2.0,
+            0.0,
+            0.0,
+            1.0,
+            3.0,
+            0.0,
+            0.0,
+            1.0,
 
-            0.0, 1.0, 0.0, 1.0,
-            1.0, 1.0, 0.0, 1.0,
-            2.0, 1.0, 0.0, 1.0,
-            3.0, 1.0, 0.0, 1.0,
+            0.0,
+            1.0,
+            0.0,
+            1.0,
+            1.0,
+            1.0,
+            0.0,
+            1.0,
+            2.0,
+            1.0,
+            0.0,
+            1.0,
+            3.0,
+            1.0,
+            0.0,
+            1.0,
 
-            0.0, 2.0, 0.0, 1.0,
-            1.0, 2.0, 0.0, 1.0,
-            2.0, 2.0, 0.0, 1.0,
-            3.0, 2.0, 0.0, 1.0,
+            0.0,
+            2.0,
+            0.0,
+            1.0,
+            1.0,
+            2.0,
+            0.0,
+            1.0,
+            2.0,
+            2.0,
+            0.0,
+            1.0,
+            3.0,
+            2.0,
+            0.0,
+            1.0,
 
-            0.0, 3.0, 0.0, 1.0,
-            1.0, 3.0, 0.0, 1.0,
-            2.0, 3.0, 0.0, 1.0,
-            3.0, 3.0, 0.0, 1.0
-        };
+            0.0,
+            3.0,
+            0.0,
+            1.0,
+            1.0,
+            3.0,
+            0.0,
+            1.0,
+            2.0,
+            3.0,
+            0.0,
+            1.0,
+            3.0,
+            3.0,
+            0.0,
+            1.0};
     }
 
     validate_spec(spec);

@@ -49,7 +49,7 @@ void load_curves_binary(std::istream& in, MshSpec& spec)
         in >> curve.num_knots;
         in >> curve.with_weights;
 
-        eat_white_space(in);
+        eat_white_space(in, 1);
         size_t num_entries =
             curve.num_control_points * ((curve.with_weights > 0) ? 4 : 3) + curve.num_knots;
         curve.data.resize(num_entries);

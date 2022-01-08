@@ -60,7 +60,7 @@ void load_patches_binary(std::istream& in, MshSpec& spec)
             patch.num_control_points * dim + patch.num_u_knots + patch.num_v_knots;
 
         patch.data.resize(num_entries);
-        eat_white_space(in);
+        eat_white_space(in, 1);
 
         in.read(reinterpret_cast<char*>(patch.data.data()), sizeof(double) * num_entries);
     }

@@ -4,12 +4,17 @@
 
 namespace mshio {
 
-void eat_white_space(std::istream& in)
+void eat_white_space(std::istream& in, size_t count)
 {
     char ch = static_cast<char>(in.peek());
-    while (ch == '\n' || ch == '\r' || ch == ' ' || ch == '\t') {
-        in.get();
-        ch = static_cast<char>(in.peek());
+    while (count > 0) {
+        if (ch == '\n' || ch == '\r' || ch == ' ' || ch == '\t') {
+            in.get();
+            ch = static_cast<char>(in.peek());
+        } else {
+            break;
+        }
+        count--;
     }
 }
 

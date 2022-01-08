@@ -28,13 +28,13 @@ the following sections are supported:
 |             [Nodes] | 3D coordinates of nodes and (optionally) their parameterization coordinates. |
 |          [Elements] | A list of elements grouped by blocks.                                        |
 |          [Entities] | The boundary representation (BRep) of the model.                             |
+|   [Physical groups] | Metadata defined on elements.                                                |
 |         [Node data] | Scalar/vector/tensor fields defined on nodes.                                |
 |      [Element data] | Scalar/vector/tensor fields defined on elements.                             |
 | [Element-node data] | Scalar/vector/tensor fields defined over each node of each element.          |
 
 The follow sections are supported by MSH format, but not yet supported by MshIO
 (contribution welcomed):
-* Physical names
 * Partitioned entities
 * Periodic
 * Ghost elements
@@ -183,6 +183,21 @@ assert(surface_entity != surface_entities.end());
 auto& physical_groups = surface_entity->physical_group_tags;
 ```
 
+### Physical groups
+
+Physical groups are used to tag elements with arbitrary metadata (e.g.
+"boundary", "steel", etc.). Physical groups have an `int` tag, `int` dimension,
+and `string` name. The name may be empty.
+
+```c++
+auto& physical_groups = spec.physical_groups;
+auto& pg = physical_groups[k];
+
+pg.dim = 0;
+pg.tag = 1;
+pg.name = "My Physical Group";
+```
+
 ### Post-processing data
 
 One of main advantage of MSH format is its support for storing post-processing
@@ -284,3 +299,4 @@ The following types are supported by MshIO:
 [Element data]: #Post-processing-data
 [Element-node data]: #Post-processing-data
 [Entities]: #Entities
+[Physical groups]: #Physical-groups

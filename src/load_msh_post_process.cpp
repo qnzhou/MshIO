@@ -3,6 +3,9 @@
 
 #include <mshio/MshSpec.h>
 
+#include <cassert>
+#include <limits>
+
 namespace mshio {
 namespace v22 {
 
@@ -31,7 +34,8 @@ void regroup_nodes_into_blocks(MshSpec& spec)
     std::vector<NodeBlock> node_blocks;
     node_blocks.reserve(16);
 
-    size_t curr_dim = 0, curr_tag = 0;
+    constexpr size_t INVALID = std::numeric_limits<size_t>::max();
+    size_t curr_dim = INVALID, curr_tag = INVALID;
     for (auto& block : nodes.entity_blocks) {
         for (size_t i = 0; i < block.num_nodes_in_block; i++) {
             size_t idx = node_index(block.tags[i]);
@@ -49,6 +53,7 @@ void regroup_nodes_into_blocks(MshSpec& spec)
                 curr_tag = tag;
             }
 
+            assert(!node_blocks.empty());
             auto& curr_block = node_blocks.back();
             curr_block.tags.push_back(block.tags[i]);
             curr_block.data.push_back(block.data[i * 3]);

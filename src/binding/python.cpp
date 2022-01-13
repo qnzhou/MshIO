@@ -157,4 +157,10 @@ PYBIND11_MODULE(mshio, m)
         .def_readwrite("node_data", &mshio::MshSpec::node_data)
         .def_readwrite("element_data", &mshio::MshSpec::element_data)
         .def_readwrite("element_node_data", &mshio::MshSpec::element_node_data);
+
+    m.def("load_msh", py::overload_cast<const std::string&>(&mshio::load_msh));
+    m.def("save_msh", py::overload_cast<const std::string&, const mshio::MshSpec&>(&mshio::save_msh));
+    m.def("validate_spec", &mshio::validate_spec);
+    m.def("nodes_per_element", &mshio::nodes_per_element);
+    m.def("get_element_dim", &mshio::get_element_dim);
 }

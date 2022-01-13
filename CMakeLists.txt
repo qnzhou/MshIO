@@ -16,10 +16,10 @@ project(MshIO)
 option(MSHIO_BUILD_TESTS "Build unit tests" Off)
 option(MSHIO_BUILD_EXAMPLES "Build examples" Off)
 option(MSHIO_EXT_NANOSPLINE "Enable nanospline extension" Off)
+option(MSHIO_PYTHON "Build python binding" OFF)
 
 include(FetchContent)
 include(cmake/sanitizer-cmake.cmake)
-
 
 file(GLOB INC_FILES "${PROJECT_SOURCE_DIR}/include/mshio/*.h")
 file(GLOB SRC_FILES "${PROJECT_SOURCE_DIR}/src/*.cpp")
@@ -29,6 +29,14 @@ add_library(mshio STATIC ${SRC_FILES})
 target_include_directories(mshio PUBLIC ${PROJECT_SOURCE_DIR}/include)
 add_library(mshio::mshio ALIAS mshio)
 
+if (MSHIO_PYTHON)
+    include(cmake/pybind11.cmake)
+    file(GLOB PY_SRC_FILES "${PROJECT_SOURCE_DIR}/src/binding/python.cpp")
+    pybind11_add_module(pymshio SHARED ${PY_SRC_FILES})
+    target_link_libraries(pymshio PUBLIC mshio::mshio pybind11::pybind11)
+    set_target_properties(pymshio PROPERTIES OUTPUT_NAME "mshio")
+    add_library(mshio::pymshio ALIAS pymshio)
+endif()
 
 if (MSHIO_EXT_NANOSPLINE)
     target_compile_definitions(mshio PUBLIC -DMSHIO_EXT_NANOSPLINE)

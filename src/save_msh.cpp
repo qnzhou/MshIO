@@ -53,7 +53,9 @@ void save_msh(std::ostream& out, const MshSpec& spec)
 void save_msh(const std::string& filename, const MshSpec& spec)
 {
     std::ofstream fout(filename.c_str(), std::ios::binary);
-    assert(fout.is_open());
+    if (!fout.is_open()) {
+        throw std::runtime_error("Unable to open output file to write!");
+    }
     save_msh(fout, spec);
 }
 

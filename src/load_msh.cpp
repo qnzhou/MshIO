@@ -71,7 +71,9 @@ MshSpec load_msh(std::istream& in)
 MshSpec load_msh(const std::string& filename)
 {
     std::ifstream fin(filename.c_str(), std::ios::binary);
-    assert(fin.is_open());
+    if (!fin.is_open()) {
+        throw std::runtime_error("Input file does not exist!");
+    }
     return load_msh(fin);
 }
 

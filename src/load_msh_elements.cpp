@@ -142,25 +142,19 @@ void load_elements_binary(std::istream& in, MshSpec& spec)
     int32_t max_tag = 0;
     size_t num_processed_elements = 0;
     while (num_processed_elements != elements.num_elements) {
-        elements.entity_blocks.emplace_back();
-        ElementBlock& block = elements.entity_blocks.back();
-
-        int32_t element_type, num_element_in_block, num_tags, element_id;
+        int32_t element_type, num_elements_in_block, num_tags, element_id;
         in.read(reinterpret_cast<char*>(&element_type), 4);
-        in.read(reinterpret_cast<char*>(&num_element_in_block), 4);
+        in.read(reinterpret_cast<char*>(&num_elements_in_block), 4);
         in.read(reinterpret_cast<char*>(&num_tags), 4);
 
-        block.entity_dim = get_element_dim(element_type);
-        block.entity_tag = 1; // TODO: check
-        block.element_type = static_cast<int>(element_type);
-        block.num_elements_in_block = static_cast<size_t>(num_element_in_block);
+        tags.resize(static_cast<size_t>(num_tags));
 
         const size_t n = nodes_per_element(element_type);
-        tags.resize(static_cast<size_t>(num_tags));
         node_ids.resize(n);
 
-        block.data.resize(block.num_elements_in_block * (n + 1));
-        for (size_t i = 0; i < block.num_elements_in_block; i++) {
+        // Due to v2.2 constraints, each element is parsed as a separate block, and
+        // a regrouping will happen at post-processing time.
+        for (size_t i = 0; i < num_elements_in_block; i++) {
             in.read(reinterpret_cast<char*>(&element_id), 4);
             in.read(reinterpret_cast<char*>(tags.data()), 4 * num_tags);
             in.read(reinterpret_cast<char*>(node_ids.data()), static_cast<int>(4 * n));
@@ -168,15 +162,27 @@ void load_elements_binary(std::istream& in, MshSpec& spec)
             min_tag = std::min(min_tag, element_id);
             max_tag = std::max(max_tag, element_id);
 
-            block.data[i * (n + 1)] = static_cast<size_t>(element_id);
-            for (size_t j = 1; j <= n; j++) {
-                block.data[i * (n + 1) + j] = static_cast<size_t>(node_ids[j - 1]);
+            elements.entity_blocks.emplace_back();
+            ElementBlock& block = elements.entity_blocks.back();
+            block.num_elements_in_block = 1;
+            block.entity_dim = get_element_dim(element_type);
+            if (tags.size() > 0) {
+                block.entity_tag = tags.front();
+            } else {
+                block.entity_tag = 1;
             }
-        }
+            block.element_type = static_cast<int>(element_type);
+            block.data.resize(n + 1);
 
-        num_processed_elements += block.num_elements_in_block;
-        if (num_processed_elements > elements.num_elements) {
-            throw InvalidFormat("Inconsistent element count detected!");
+            block.data[0] = static_cast<size_t>(element_id);
+            for (size_t j = 0; j < n; j++) {
+                block.data[j + 1] = static_cast<size_t>(node_ids[j]);
+            }
+
+            num_processed_elements++;
+            if (num_processed_elements > elements.num_elements) {
+                throw InvalidFormat("Inconsistent element count detected!");
+            }
         }
     }
 

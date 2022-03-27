@@ -106,9 +106,7 @@ void load_msh_post_process(MshSpec& spec)
 {
     if (spec.mesh_format.version == "2.2") {
         v22::regroup_nodes_into_blocks(spec);
-        if (spec.mesh_format.file_type == 0) {
-            v22::regroup_elements_into_blocks(spec);
-        }
+        v22::regroup_elements_into_blocks(spec);
     }
 }
 

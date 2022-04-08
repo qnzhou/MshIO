@@ -41,7 +41,7 @@ endif()
 
 if (MSHIO_PYTHON)
     include(cmake/nanobind.cmake)
-    set(PY_SRC_FILE "${PROJECT_SOURCE_DIR}/src/binding/nanobind.cpp")
+    set(PY_SRC_FILE "${PROJECT_SOURCE_DIR}/python/pymshio.cpp")
     nanobind_add_module(pymshio NB_STATIC ${PY_SRC_FILE})
     target_link_libraries(pymshio PUBLIC mshio::mshio)
     install(TARGETS pymshio LIBRARY DESTINATION .)

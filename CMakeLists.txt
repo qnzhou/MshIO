@@ -13,35 +13,39 @@ set(CMAKE_CXX_STANDARD 14)
 
 project(MshIO)
 
-option(MSHIO_BUILD_TESTS "Build unit tests" Off)
-option(MSHIO_BUILD_EXAMPLES "Build examples" Off)
-option(MSHIO_EXT_NANOSPLINE "Enable nanospline extension" Off)
-option(MSHIO_PYTHON "Build python binding" OFF)
+option(MSHIO_BUILD_TESTS "Build unit tests" OFF)
+option(MSHIO_BUILD_EXAMPLES "Build examples" OFF)
+option(MSHIO_EXT_NANOSPLINE "Enable nanospline extension" OFF)
+
+if (NOT SKBUILD)
+    option(MSHIO_PYTHON "Build python binding" OFF)
+else()
+    set(MSHIO_PYTHON ON CACHE BOOL "Build python binding" FORCE)
+endif()
 
 include(FetchContent)
-include(cmake/sanitizer-cmake.cmake)
 
 file(GLOB INC_FILES "${PROJECT_SOURCE_DIR}/include/mshio/*.h")
 file(GLOB SRC_FILES "${PROJECT_SOURCE_DIR}/src/*.cpp")
-
 
 add_library(mshio STATIC ${SRC_FILES})
 target_include_directories(mshio PUBLIC ${PROJECT_SOURCE_DIR}/include)
 add_library(mshio::mshio ALIAS mshio)
 set_target_properties(mshio PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
-if (MSHIO_PYTHON)
-    include(cmake/pybind11.cmake)
-    set(PY_SRC_FILE "${PROJECT_SOURCE_DIR}/src/binding/python.cpp")
-    pybind11_add_module(pymshio SHARED ${PY_SRC_FILE})
-    target_link_libraries(pymshio PUBLIC mshio::mshio pybind11::pybind11)
-    set_target_properties(pymshio PROPERTIES OUTPUT_NAME "mshio")
-    set_target_properties(pymshio PROPERTIES CXX_VISIBILITY_PRESET hidden)
-    add_library(mshio::pymshio ALIAS pymshio)
-endif()
 
 if (MSHIO_EXT_NANOSPLINE)
     target_compile_definitions(mshio PUBLIC -DMSHIO_EXT_NANOSPLINE)
+endif()
+
+
+if (MSHIO_PYTHON)
+    include(cmake/nanobind.cmake)
+    set(PY_SRC_FILE "${PROJECT_SOURCE_DIR}/python/pymshio.cpp")
+    nanobind_add_module(pymshio NB_STATIC ${PY_SRC_FILE})
+    target_link_libraries(pymshio PUBLIC mshio::mshio)
+    install(TARGETS pymshio LIBRARY DESTINATION .)
+    add_library(mshio::pymshio ALIAS pymshio)
 endif()
 
 
@@ -55,6 +59,7 @@ if (MSHIO_BUILD_TESTS)
     include(CTest)
     enable_testing()
     include(cmake/Catch2.cmake)
+    include(cmake/sanitizer-cmake.cmake)
 
     file(GLOB TEST_FILES "${PROJECT_SOURCE_DIR}/tests/*.cpp")
     add_executable(test_MshIO ${TEST_FILES})
@@ -79,9 +84,11 @@ if (MSHIO_BUILD_TESTS)
 endif()
 
 
-install(TARGETS mshio
-        RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
-        LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
-install(DIRECTORY include/ DESTINATION include
-        FILES_MATCHING PATTERN "*.h")
+if (NOT MSHIO_PYTHON)
+    install(TARGETS mshio
+            RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
+            ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
+            LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+    install(DIRECTORY include/ DESTINATION include
+            FILES_MATCHING PATTERN "*.h")
+endif()

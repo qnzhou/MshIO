@@ -3,28 +3,11 @@
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
-#include <nanobind/tensor.h>
 
 namespace nb = nanobind;
 
-// NB_MAKE_OPAQUE(std::vector<int>);
-// NB_MAKE_OPAQUE(std::vector<size_t>);
-// NB_MAKE_OPAQUE(std::vector<double>);
-// NB_MAKE_OPAQUE(std::vector<std::string>);
-// NB_MAKE_OPAQUE(std::vector<mshio::NodeBlock>);
-// NB_MAKE_OPAQUE(std::vector<mshio::ElementBlock>);
-// NB_MAKE_OPAQUE(std::vector<mshio::Data>);
-// NB_MAKE_OPAQUE(std::vector<mshio::DataEntry>);
-// NB_MAKE_OPAQUE(std::vector<mshio::PointEntity>);
-// NB_MAKE_OPAQUE(std::vector<mshio::CurveEntity>);
-// NB_MAKE_OPAQUE(std::vector<mshio::SurfaceEntity>);
-// NB_MAKE_OPAQUE(std::vector<mshio::VolumeEntity>);
-// NB_MAKE_OPAQUE(std::vector<mshio::PhysicalGroup>);
-
 NB_MODULE(pymshio, m)
 {
-    // m.doc() = "MSH format IO";
-
     nb::class_<mshio::MeshFormat>(m, "MeshFormat")
         .def(nb::init<>())
         .def_readwrite("version", &mshio::MeshFormat::version)
@@ -38,22 +21,6 @@ NB_MODULE(pymshio, m)
         .def_readwrite("parametric", &mshio::NodeBlock::parametric)
         .def_readwrite("num_nodes_in_block", &mshio::NodeBlock::num_nodes_in_block)
         .def_readwrite("tags", &mshio::NodeBlock::tags)
-        .def("address", [](mshio::NodeBlock& node_block) { return node_block.data.data(); })
-        .def_property(
-            "data2",
-            [](mshio::NodeBlock& node_block) {
-                size_t shape[1] = {node_block.data.size()};
-                return nb::tensor<nb::numpy, double, nb::shape<nb::any>>(
-                    node_block.data.data(), /* ndim = */ 1, shape);
-            },
-            [](mshio::NodeBlock& node_block,
-                nb::tensor<nb::numpy, double, nb::shape<nb::any>>& data) {
-                node_block.data.clear();
-                node_block.data.reserve(data.shape(0));
-                for (size_t i = 0; i < data.shape(0); i++) {
-                    node_block.data.push_back(data(i));
-                }
-            })
         .def_readwrite("data", &mshio::NodeBlock::data);
 
     nb::class_<mshio::Nodes>(m, "Nodes")

@@ -29,7 +29,10 @@ file(GLOB INC_FILES "${PROJECT_SOURCE_DIR}/include/mshio/*.h")
 file(GLOB SRC_FILES "${PROJECT_SOURCE_DIR}/src/*.cpp")
 
 add_library(mshio STATIC ${SRC_FILES})
-target_include_directories(mshio PUBLIC ${PROJECT_SOURCE_DIR}/include)
+target_include_directories(mshio PUBLIC
+    "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+    "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/include>")
+
 add_library(mshio::mshio ALIAS mshio)
 set_target_properties(mshio PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
@@ -85,10 +88,13 @@ endif()
 
 
 if (NOT MSHIO_PYTHON)
+    include(GNUInstallDirs)
     install(TARGETS mshio
-            RUNTIME DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
-            ARCHIVE DESTINATION ${CMAKE_INSTALL_PREFIX}/lib
-            LIBRARY DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+            EXPORT mshio_target
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
     install(DIRECTORY include/ DESTINATION include
             FILES_MATCHING PATTERN "*.h")
+    install(EXPORT mshio_target DESTINATION cmake)
 endif()

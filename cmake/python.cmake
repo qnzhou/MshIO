@@ -1,0 +1,20 @@
+if (TARGET Python::Module)
+    return()
+endif()
+
+if (SKBUILD)
+    message(STATUS "Use scikit-build python environment")
+    message(STATUS "Python_VERSION ${PYTHON_VERSION_STRING}")
+    message(STATUS "Python_EXECUTABLE ${PYTHON_EXECUTABLE}")
+    message(STATUS "Python_INCLUDE_DIR ${PYTHON_INCLUDE_DIR}")
+    message(STATUS "Python_LIBRARIES ${PYTHON_LIBRARY}")
+    set(Python_VERSION "${PYTHON_VERSION_STRING}")
+    set(Python_EXECUTABLE "${PYTHON_EXECUTABLE}")
+    set(Python_INCLUDE_DIR "${PYTHON_INCLUDE_DIR}")
+    set(Python_LIBRARIES "${PYTHON_LIBRARY}")
+else()
+    set(Python_FIND_VIRTUALENV FIRST)
+endif()
+
+find_package(Python COMPONENTS Interpreter Development.Module REQUIRED)
+

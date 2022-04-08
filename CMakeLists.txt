@@ -88,11 +88,12 @@ endif()
 
 
 if (NOT MSHIO_PYTHON)
+    include(GNUInstallDirs)
     install(TARGETS mshio
             EXPORT mshio_target
-            RUNTIME DESTINATION bin
-            ARCHIVE DESTINATION lib
-            LIBRARY DESTINATION lib)
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
     install(DIRECTORY include/ DESTINATION include
             FILES_MATCHING PATTERN "*.h")
     install(EXPORT mshio_target DESTINATION cmake)

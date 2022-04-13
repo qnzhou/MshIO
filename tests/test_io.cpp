@@ -569,6 +569,41 @@ TEST_CASE("element data")
     save_and_load(spec);
 }
 
+TEST_CASE("element node data")
+{
+    using namespace mshio;
+
+    MshSpec spec;
+    spec.mesh_format.file_type = 1;
+
+    auto add_element_node_data = [&](const std::string& name, const auto& data) {
+        auto& elem_node_data = spec.element_node_data;
+
+        Data attr;
+        attr.header.string_tags = {name};
+        attr.header.real_tags = {0};
+        attr.header.int_tags = {0, 1, static_cast<int>(data.size()), 0, 10};
+
+        size_t tag = 10;
+        for (const auto& value : data) {
+            DataEntry entry;
+            entry.tag = tag;
+            entry.num_nodes_per_element = 3;
+            entry.data = {value, value, value};
+            tag++;
+            attr.entries.push_back(std::move(entry));
+        }
+
+        elem_node_data.push_back(attr);
+    };
+
+    std::vector<double> ids = {1.0};
+    add_element_node_data("c index", ids);
+
+    validate_spec(spec);
+    save_and_load(spec);
+}
+
 
 #ifdef MSHIO_EXT_NANOSPLINE
 TEST_CASE("NanoSpline extension", "[nanospline][ext][io]")

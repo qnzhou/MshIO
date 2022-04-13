@@ -112,10 +112,20 @@ void load_data(std::istream& in,
     } else {
         for (size_t i = 0; i < num_entries; i++) {
             DataEntry& entry = data.entries[i];
-            entry.data.resize(fields_per_entry);
             in >> entry.tag;
-            for (size_t j = 0; j < fields_per_entry; j++) {
-                in >> entry.data[j];
+            if (is_element_node_data) {
+                in >> entry.num_nodes_per_element;
+                entry.data.resize(fields_per_entry * entry.num_nodes_per_element);
+                for (size_t j = 0; j < entry.num_nodes_per_element; j++) {
+                    for (size_t k = 0; k < fields_per_entry; k++) {
+                        in >> entry.data[j * fields_per_entry + k];
+                    }
+                }
+            } else {
+                entry.data.resize(fields_per_entry);
+                for (size_t j = 0; j < fields_per_entry; j++) {
+                    in >> entry.data[j];
+                }
             }
         }
     }

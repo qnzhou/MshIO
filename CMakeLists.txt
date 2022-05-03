@@ -34,7 +34,6 @@ target_include_directories(mshio PUBLIC
     "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/include>")
 
 add_library(mshio::mshio ALIAS mshio)
-set_target_properties(mshio PROPERTIES CXX_VISIBILITY_PRESET hidden)
 
 
 if (MSHIO_EXT_NANOSPLINE)

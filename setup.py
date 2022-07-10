@@ -22,8 +22,8 @@ setup(
     cmake_install_dir="python/mshio",
     include_package_data=True,
     python_requires=">=3.8",
-    dependencies=[
+    install_requires=[
         "pytest",
-        "numpy>=1.21"
+        "numpy>=1.23"
         ]
 )

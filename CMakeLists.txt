@@ -32,6 +32,7 @@ add_library(mshio STATIC ${SRC_FILES})
 target_include_directories(mshio PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/include>")
+set_property(TARGET mshio PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 add_library(mshio::mshio ALIAS mshio)
 

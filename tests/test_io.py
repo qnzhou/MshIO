@@ -19,9 +19,9 @@ class TestNodes:
         tags = self.generate_tmp()
         assert len(tags) == 3
         assert tags[0] == 1
-        tags.setflags(write=True)
-        tags[0] = -1
-        assert tags[0] == -1
+
+        with pytest.raises(ValueError) as e:
+            tags.setflags(write=True)
 
     def test_node_block(self):
         block = mshio.NodeBlock()

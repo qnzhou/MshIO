@@ -7,6 +7,8 @@
 
 #include <cassert>
 
+namespace {
+
 namespace nb = nanobind;
 
 template <typename T>
@@ -18,6 +20,31 @@ using nbMatrix = nb::tensor<nb::numpy, T, nb::shape<nb::any, nb::any>>;
 using Int = int32_t;
 using Float = double;
 
+template <typename T, size_t dim0>
+void copy_memory(nb::tensor<nb::numpy, T, nb::shape<dim0>> tensor, std::vector<T> &buffer)
+{
+    assert(tensor.stride(0) == 1);
+    buffer.clear();
+    buffer.reserve(tensor.shape(0));
+    for (size_t i = 0; i < tensor.shape(0); i++) {
+        buffer.push_back(tensor(i));
+    }
+}
+
+template <typename T, size_t dim0, size_t dim1>
+void copy_memory(nb::tensor<nb::numpy, T, nb::shape<dim0, dim1>> tensor, std::vector<T> &buffer)
+{
+    size_t shape[] = {tensor.shape(0), tensor.shape(1)};
+    buffer.clear();
+    buffer.resize(shape[0] * shape[1]);
+    for (size_t i = 0; i < shape[0]; i++) {
+        for (size_t j = 0; j < shape[1]; j++) {
+            buffer[i * shape[1] + j] = tensor(i, j);
+        }
+    }
+}
+
+} // namespace
 
 NB_MODULE(pymshio, m)
 {
@@ -43,13 +70,7 @@ NB_MODULE(pymshio, m)
             [](mshio::NodeBlock &block, nbArray<size_t> tensor) {
                 // Memory should be managed by C++, so we need to copy numpy
                 // buffer to C++.
-                assert(tensor.ndim() == 1);
-                assert(tensor.stride(0) == 1);
-                block.tags.clear();
-                block.tags.reserve(tensor.shape(0));
-                for (size_t i = 0; i < tensor.shape(0); i++) {
-                    block.tags.push_back(tensor(i));
-                }
+                copy_memory(tensor, block.tags);
             })
         .def_readwrite("_data_", &mshio::NodeBlock::data)
         .def_property(
@@ -66,16 +87,8 @@ NB_MODULE(pymshio, m)
             [](mshio::NodeBlock &block, nbMatrix<Float> tensor) {
                 // Memory should be managed by C++, so we need to copy numpy
                 // buffer to C++.
-                assert(tensor.ndim() == 2);
-                size_t shape[] = {tensor.shape(0), tensor.shape(1)};
-                block.data.clear();
-                block.data.resize(shape[0] * shape[1]);
-                for (size_t i = 0; i < shape[0]; i++) {
-                    for (size_t j = 0; j < shape[1]; j++) {
-                        block.data[i * shape[1] + j] = tensor(i, j);
-                    }
-                }
-                block.num_nodes_in_block = shape[0];
+                copy_memory(tensor, block.data);
+                block.num_nodes_in_block = tensor.shape(0);
             });
 
     nb::class_<mshio::Nodes>(m, "Nodes")
@@ -102,15 +115,7 @@ NB_MODULE(pymshio, m)
                 return nbMatrix<size_t>(reinterpret_cast<void *>(block.data.data()), 2, shape);
             },
             [](mshio::ElementBlock &block, nbMatrix<size_t> tensor) {
-                assert(tensor.ndim() == 2);
-                size_t shape[] = {tensor.shape(0), tensor.shape(1)};
-                block.data.clear();
-                block.data.resize(shape[0] * shape[1]);
-                for (size_t i = 0; i < shape[0]; i++) {
-                    for (size_t j = 0; j < shape[1]; j++) {
-                        block.data[i * shape[1] + j] = tensor(i, j);
-                    }
-                }
+                copy_memory(tensor, block.data);
                 block.num_elements_in_block = tensor.shape(0);
             });
 

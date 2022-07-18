@@ -13,24 +13,20 @@ class TestNodes:
 
     def generate_tmp(self):
         block = mshio.NodeBlock()
-        logger.debug(sys.getrefcount(block))
+        assert sys.getrefcount(block) == 2
         block.tags = np.array([1, 2, 3])
+        assert sys.getrefcount(block) == 2
         tags = block.tags
-        logger.debug(sys.getrefcount(block))
+        assert sys.getrefcount(block) == 3
         assert block.tags[0] == 1
-        logger.debug(sys.getrefcount(block))
-        logger.debug(tags)
         return tags
 
-    @pytest.mark.skip("This test leads to a memory bug.")
-    def test_tmp(self):
-        # Tags now points to invalid memory if its parent node block object has been destructed.
+    def test_memory_ownership(self):
         tags = self.generate_tmp()
-        self.logger.debug(tags)
-        self.logger.debug(hex(tags.__array_interface__["data"][0]))
         assert len(tags) == 3
-        assert tags[0] == 1
+        assert np.all(tags == [1, 2, 3])
 
+        # As a limitation of numpy's dlpack support, tensors are readonly.
         with pytest.raises(ValueError) as e:
             tags.setflags(write=True)
 

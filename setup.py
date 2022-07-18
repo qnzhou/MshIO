@@ -21,5 +21,10 @@ setup(
     package_dir={'': 'python'},
     cmake_install_dir="python/mshio",
     include_package_data=True,
-    python_requires=">=3.8"
+    python_requires=">=3.8",
+    #cmake_args=['-DSANITIZE_ADDRESS=On'],
+    install_requires=[
+        "pytest",
+        "numpy>=1.23"
+        ]
 )

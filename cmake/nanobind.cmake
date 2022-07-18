@@ -6,7 +6,7 @@ include(cmake/python.cmake)
 FetchContent_Declare(
     nanobind
     GIT_REPOSITORY https://github.com/wjakob/nanobind.git
-    GIT_TAG 836405b6e2b64ceac42d6bc90081fed0275b800d
+    GIT_TAG 53e88b6cf0764ccc157123e3c0f815d33bb80119
     GIT_SHALLOW OFF)
 
 FetchContent_Populate(nanobind)

@@ -5,6 +5,7 @@ import numbers
 import pytest
 import logging
 import numpy as np
+import sys
 
 
 class TestNodes:
@@ -12,11 +13,21 @@ class TestNodes:
 
     def generate_tmp(self):
         block = mshio.NodeBlock()
+        logger.debug(sys.getrefcount(block))
         block.tags = np.array([1, 2, 3])
-        return block.tags
+        tags = block.tags
+        logger.debug(sys.getrefcount(block))
+        assert block.tags[0] == 1
+        logger.debug(sys.getrefcount(block))
+        logger.debug(tags)
+        return tags
 
+    @pytest.mark.skip("This test leads to a memory bug.")
     def test_tmp(self):
+        # Tags now points to invalid memory if its parent node block object has been destructed.
         tags = self.generate_tmp()
+        self.logger.debug(tags)
+        self.logger.debug(hex(tags.__array_interface__["data"][0]))
         assert len(tags) == 3
         assert tags[0] == 1
 
@@ -47,10 +58,7 @@ class TestNodes:
 
     def test_element_block(self):
         block = mshio.ElementBlock()
-        facets = np.array([
-            [1, 0, 1, 2],
-            [2, 2, 1, 3]
-            ])
+        facets = np.array([[1, 0, 1, 2], [2, 2, 1, 3]])
         block.data = facets
 
         assert len(block.data) == 2

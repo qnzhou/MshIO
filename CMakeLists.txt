@@ -49,6 +49,16 @@ if (MSHIO_PYTHON)
     target_link_libraries(pymshio PUBLIC mshio::mshio)
     install(TARGETS pymshio LIBRARY DESTINATION .)
     add_library(mshio::pymshio ALIAS pymshio)
+
+    include(cmake/sanitizer-cmake.cmake)
+    if (SANITIZE_ADDRESS OR
+            SANITIZE_LINK_STATIC OR
+            SANITIZE_MEMORY OR
+            SANITIZE_THREAD OR
+            SANITIZE_UNDEFINED)
+        add_sanitizers(pymshio)
+        target_link_options(pymshio PRIVATE "-shared-libasan")
+    endif()
 endif()
 
 

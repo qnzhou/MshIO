@@ -70,7 +70,8 @@ void save_patches_binary(std::ostream& out, const MshSpec& spec)
             patch.num_control_points * dim + patch.num_u_knots + patch.num_v_knots;
         assert(patch.data.size() == num_entries);
 
-        out.write(reinterpret_cast<const char*>(patch.data.data()), sizeof(double) * num_entries);
+        out.write(reinterpret_cast<const char*>(patch.data.data()),
+            static_cast<std::streamsize>(sizeof(double) * num_entries));
     }
 #endif
 }

@@ -179,13 +179,13 @@ int main(int argc, char** argv)
         }
         std::cout << std::endl;
 
-        size_t fields_per_entity = static_cast<size_t>(data.header.int_tags[1]);
-        size_t num_entities = static_cast<size_t>(data.header.int_tags[2]);
-        for (size_t i = 0; i < num_entities; i++) {
-            const mshio::DataEntry& entry = data.entries[i];
-            std::cout << "  " << entry.tag << ": ";
-            for (size_t j = 0; j < fields_per_entity; j++) {
-                std::cout << entry.data[j] << " ";
+        size_t num_fields = static_cast<size_t>(data.header.int_tags[1]);
+        size_t num_entries = static_cast<size_t>(data.header.int_tags[2]);
+        size_t entry_size = data.nodes_per_element == 0 ? num_fields : num_fields * data.nodes_per_element;
+        for (size_t i=0; i< num_entries; i++) {
+            std::cout << "  " << data.tags[i] << ":";
+            for (size_t j=0; j<entry_size; j++) {
+                std::cout << ' ' << data.data[i*entry_size + j];
             }
             std::cout << std::endl;
         }
@@ -201,6 +201,13 @@ int main(int argc, char** argv)
     if (spec.element_data.size() > 0) {
         std::cout << "Element data: " << std::endl;
         for (const mshio::Data& data : spec.element_data) {
+            print_data(data);
+        }
+    }
+
+    if (spec.element_node_data.size() > 0) {
+        std::cout << "ElementNode data: " << std::endl;
+        for (const mshio::Data& data : spec.element_node_data) {
             print_data(data);
         }
     }

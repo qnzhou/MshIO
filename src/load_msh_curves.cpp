@@ -53,7 +53,8 @@ void load_curves_binary(std::istream& in, MshSpec& spec)
         size_t num_entries =
             curve.num_control_points * ((curve.with_weights > 0) ? 4 : 3) + curve.num_knots;
         curve.data.resize(num_entries);
-        in.read(reinterpret_cast<char*>(curve.data.data()), sizeof(double) * num_entries);
+        in.read(reinterpret_cast<char*>(curve.data.data()),
+            static_cast<std::streamsize>(sizeof(double) * num_entries));
     }
 #endif
 }

@@ -62,7 +62,8 @@ void load_patches_binary(std::istream& in, MshSpec& spec)
         patch.data.resize(num_entries);
         eat_white_space(in, 1);
 
-        in.read(reinterpret_cast<char*>(patch.data.data()), sizeof(double) * num_entries);
+        in.read(reinterpret_cast<char*>(patch.data.data()),
+            static_cast<std::streamsize>(sizeof(double) * num_entries));
     }
 #endif
 }

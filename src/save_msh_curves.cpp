@@ -63,7 +63,8 @@ void save_curves_binary(std::ostream& out, const MshSpec& spec)
         const size_t num_entries = curve.num_control_points * dim + curve.num_knots;
         assert(num_entries == curve.data.size());
 
-        out.write(reinterpret_cast<const char*>(curve.data.data()), sizeof(double) * num_entries);
+        out.write(reinterpret_cast<const char*>(curve.data.data()),
+            static_cast<std::streamsize>(sizeof(double) * num_entries));
     }
 #endif
 }

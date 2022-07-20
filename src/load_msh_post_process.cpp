@@ -25,8 +25,8 @@ void regroup_nodes_into_blocks(MshSpec& spec)
         for (size_t i = 0; i < block.num_elements_in_block; i++) {
             for (size_t j = 0; j < n; j++) {
                 size_t idx = node_index(block.data[i * (n + 1) + j + 1]);
-                entity_dims[idx] = block.entity_dim;
-                entity_tags[idx] = block.entity_tag;
+                entity_dims[idx] = static_cast<size_t>(block.entity_dim);
+                entity_tags[idx] = static_cast<size_t>(block.entity_tag);
             }
         }
     }
@@ -86,9 +86,9 @@ void regroup_elements_into_blocks(MshSpec& spec)
             curr_block.entity_tag = block.entity_tag;
             curr_block.element_type = block.element_type;
 
-            curr_dim = block.entity_dim;
-            curr_tag = block.entity_tag;
-            curr_element_type = block.element_type;
+            curr_dim = static_cast<size_t>(block.entity_dim);
+            curr_tag = static_cast<size_t>(block.entity_tag);
+            curr_element_type = static_cast<size_t>(block.element_type);
         }
 
         auto& curr_block = element_blocks.back();

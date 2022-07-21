@@ -1,4 +1,5 @@
 #include <catch2/catch.hpp>
+#include <numeric>
 #include <sstream>
 
 #include <mshio/mshio.h>
@@ -67,15 +68,9 @@ void ASSERT_SAME_NODE_DATA(const MshSpec& spec1, const MshSpec& spec2)
         REQUIRE(data1.header.string_tags == data2.header.string_tags);
         REQUIRE(data1.header.real_tags == data2.header.real_tags);
         REQUIRE(data1.header.int_tags == data2.header.int_tags);
-        REQUIRE(data1.entries.size() == data2.entries.size());
 
-        const size_t num_entries = data1.entries.size();
-        for (size_t j = 0; j < num_entries; j++) {
-            const auto& entry1 = data1.entries[j];
-            const auto& entry2 = data2.entries[j];
-            REQUIRE(entry1.tag == entry2.tag);
-            REQUIRE(entry1.data == entry2.data);
-        }
+        REQUIRE(data1.tags == data2.tags);
+        REQUIRE(data1.data == data2.data);
     }
 }
 
@@ -93,15 +88,9 @@ void ASSERT_SAME_ELEMENT_DATA(const MshSpec& spec1, const MshSpec& spec2)
         REQUIRE(data1.header.string_tags == data2.header.string_tags);
         REQUIRE(data1.header.real_tags == data2.header.real_tags);
         REQUIRE(data1.header.int_tags == data2.header.int_tags);
-        REQUIRE(data1.entries.size() == data2.entries.size());
 
-        const size_t num_entries = data1.entries.size();
-        for (size_t j = 0; j < num_entries; j++) {
-            const auto& entry1 = data1.entries[j];
-            const auto& entry2 = data2.entries[j];
-            REQUIRE(entry1.tag == entry2.tag);
-            REQUIRE(entry1.data == entry2.data);
-        }
+        REQUIRE(data1.tags == data2.tags);
+        REQUIRE(data1.data == data2.data);
     }
 }
 
@@ -119,16 +108,10 @@ void ASSERT_SAME_ELEMENT_NODE_DATA(const MshSpec& spec1, const MshSpec& spec2)
         REQUIRE(data1.header.string_tags == data2.header.string_tags);
         REQUIRE(data1.header.real_tags == data2.header.real_tags);
         REQUIRE(data1.header.int_tags == data2.header.int_tags);
-        REQUIRE(data1.entries.size() == data2.entries.size());
 
-        const size_t num_entries = data1.entries.size();
-        for (size_t j = 0; j < num_entries; j++) {
-            const auto& entry1 = data1.entries[j];
-            const auto& entry2 = data2.entries[j];
-            REQUIRE(entry1.tag == entry2.tag);
-            REQUIRE(entry1.num_nodes_per_element == entry2.num_nodes_per_element);
-            REQUIRE(entry1.data == entry2.data);
-        }
+        REQUIRE(data1.tags == data2.tags);
+        REQUIRE(data1.nodes_per_element == data2.nodes_per_element);
+        REQUIRE(data1.data == data2.data);
     }
 }
 
@@ -496,18 +479,10 @@ TEST_CASE("node data")
     attr.header.real_tags = {0};
     attr.header.int_tags = {0, 1, 2, 0};
 
-    DataEntry entry1;
-    entry1.tag = 1;
-    entry1.data = {1};
+    attr.tags = {1, 2};
+    attr.data = {1, 2};
 
-    DataEntry entry2;
-    entry2.tag = 2;
-    entry2.data = {2};
-
-    attr.entries.push_back(entry1);
-    attr.entries.push_back(entry2);
-
-    node_data.push_back(attr);
+    node_data.push_back(std::move(attr));
 
     validate_spec(spec);
     save_and_load(spec);
@@ -528,15 +503,11 @@ TEST_CASE("element data")
         attr.header.real_tags = {0};
         attr.header.int_tags = {0, 1, static_cast<int>(data.size()), 0, 3};
 
-        size_t tag = 9;
-        for (const auto& value : data) {
-            DataEntry entry;
-            entry.tag = tag;
-            entry.data = {value};
-            tag++;
-            attr.entries.push_back(std::move(entry));
-        }
-        node_data.push_back(attr);
+        attr.tags.resize(data.size());
+        std::iota(attr.tags.begin(), attr.tags.end(), 9);
+        attr.data = data;
+
+        node_data.push_back(std::move(attr));
     };
 
     auto add_element_data = [&](const std::string& name, const auto& data) {
@@ -547,16 +518,11 @@ TEST_CASE("element data")
         attr.header.real_tags = {0};
         attr.header.int_tags = {0, 1, static_cast<int>(data.size()), 0, 10};
 
-        size_t tag = 10;
-        for (const auto& value : data) {
-            DataEntry entry;
-            entry.tag = tag;
-            entry.data = {value};
-            tag++;
-            attr.entries.push_back(std::move(entry));
-        }
+        attr.tags.resize(data.size());
+        std::iota(attr.tags.begin(), attr.tags.end(), 10);
+        attr.data = data;
 
-        elem_data.push_back(attr);
+        elem_data.push_back(std::move(attr));
     };
 
     std::vector<double> values = {0, 1, 2, 3};
@@ -582,23 +548,99 @@ TEST_CASE("element node data")
         Data attr;
         attr.header.string_tags = {name};
         attr.header.real_tags = {0};
-        attr.header.int_tags = {0, 1, static_cast<int>(data.size()), 0, 10};
+        attr.header.int_tags = {0, 1, static_cast<int>(data.size() / 3), 0, 10};
 
-        size_t tag = 10;
-        for (const auto& value : data) {
-            DataEntry entry;
-            entry.tag = tag;
-            entry.num_nodes_per_element = 3;
-            entry.data = {value, value, value};
-            tag++;
-            attr.entries.push_back(std::move(entry));
-        }
+        attr.tags.resize(data.size() / 3);
+        std::iota(attr.tags.begin(), attr.tags.end(), 10);
+        attr.nodes_per_element = 3;
+        attr.data = data;
 
-        elem_node_data.push_back(attr);
+        elem_node_data.push_back(std::move(attr));
     };
 
-    std::vector<double> ids = {1.0};
+    std::vector<double> ids = {1.0, 2.0, 3.0};
     add_element_node_data("c index", ids);
+
+    validate_spec(spec);
+    save_and_load(spec);
+}
+
+TEST_CASE("all data", "[io][data]")
+{
+    using namespace mshio;
+
+    MshSpec spec;
+    SECTION("binary") { spec.mesh_format.file_type = 1; }
+    // SECTION("ascii") { spec.mesh_format.file_type = 0; }
+
+    // Add nodes
+    {
+        spec.nodes.num_entity_blocks = 1;
+        spec.nodes.num_nodes = 4;
+        spec.nodes.min_node_tag = 1;
+        spec.nodes.max_node_tag = 4;
+
+        NodeBlock block;
+        block.entity_dim = 2;
+        block.entity_tag = 1;
+        block.num_nodes_in_block = 4;
+        block.tags = {1, 2, 3, 4};
+        block.data = {0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0};
+        spec.nodes.entity_blocks.push_back(std::move(block));
+    }
+
+    // Add elements
+    {
+        spec.elements.num_entity_blocks = 1;
+        spec.elements.num_elements = 1;
+        spec.elements.min_element_tag = 1;
+        spec.elements.max_element_tag = 1;
+
+        ElementBlock block;
+        block.entity_dim = 2;
+        block.entity_tag = 1;
+        block.element_type = 3;
+        block.num_elements_in_block = 1;
+        block.data = {1, 1, 2, 3, 4};
+        spec.elements.entity_blocks.push_back(std::move(block));
+    }
+
+    // Add node data
+    {
+        Data attr;
+        attr.header.string_tags = {"node_id"};
+        attr.header.real_tags = {0};
+        attr.header.int_tags = {0, 1, 4, 1};
+
+        attr.tags = {1, 2, 3, 4};
+        attr.data = {1, 2, 3, 4};
+        spec.node_data.push_back(std::move(attr));
+    }
+
+    // Add element data
+    {
+        Data attr;
+        attr.header.string_tags = {"elem_normal"};
+        attr.header.real_tags = {0};
+        attr.header.int_tags = {0, 3, 1, 1};
+
+        attr.tags = {1};
+        attr.data = {0, 0, 1};
+        spec.element_data.push_back(std::move(attr));
+    }
+
+    // Add element node data
+    {
+        Data attr;
+        attr.header.string_tags = {"2D normal"};
+        attr.header.real_tags = {0};
+        attr.header.int_tags = {0, 3, 1, 1};
+
+        attr.nodes_per_element = 4;
+        attr.tags = {1};
+        attr.data = {-1, -1, 0, 1, -1, 0, 1, 1, 0, -1, 1, 0};
+        spec.element_node_data.push_back(std::move(attr));
+    }
 
     validate_spec(spec);
     save_and_load(spec);

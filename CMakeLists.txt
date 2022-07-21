@@ -29,8 +29,10 @@ file(GLOB INC_FILES "${PROJECT_SOURCE_DIR}/include/mshio/*.h")
 file(GLOB SRC_FILES "${PROJECT_SOURCE_DIR}/src/*.cpp")
 
 add_library(mshio STATIC ${SRC_FILES})
-target_compile_options(mshio PRIVATE -Wconversion -Wall -Werror
-    -Wno-deprecated-declarations)
+if(NOT MSVC)
+    target_compile_options(mshio PRIVATE -Wconversion -Wall -Werror
+        -Wno-deprecated-declarations)
+endif()
 target_include_directories(mshio PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/include>")
@@ -48,7 +50,9 @@ if (MSHIO_PYTHON)
     include(cmake/nanobind.cmake)
     set(PY_SRC_FILE "${PROJECT_SOURCE_DIR}/python/pymshio.cpp")
     nanobind_add_module(pymshio NB_STATIC ${PY_SRC_FILE})
-    target_compile_options(pymshio PRIVATE -Wno-deprecated-declarations)
+    if (NOT MSVC)
+        target_compile_options(pymshio PRIVATE -Wno-deprecated-declarations)
+    endif()
     target_link_libraries(pymshio PUBLIC mshio::mshio)
     install(TARGETS pymshio LIBRARY DESTINATION .)
     add_library(mshio::pymshio ALIAS pymshio)

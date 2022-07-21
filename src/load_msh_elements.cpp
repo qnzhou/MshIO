@@ -154,7 +154,7 @@ void load_elements_binary(std::istream& in, MshSpec& spec)
 
         // Due to v2.2 constraints, each element is parsed as a separate block, and
         // a regrouping will happen at post-processing time.
-        for (size_t i = 0; i < num_elements_in_block; i++) {
+        for (int32_t i = 0; i < num_elements_in_block; i++) {
             in.read(reinterpret_cast<char*>(&element_id), 4);
             in.read(reinterpret_cast<char*>(tags.data()), 4 * num_tags);
             in.read(reinterpret_cast<char*>(node_ids.data()), static_cast<int>(4 * n));

@@ -76,7 +76,7 @@ void regroup_elements_into_blocks(MshSpec& spec)
     std::vector<ElementBlock> element_blocks;
     element_blocks.reserve(elements.num_entity_blocks);
 
-    size_t curr_dim = 0, curr_tag = 0, curr_element_type = 0;
+    int curr_dim = 0, curr_tag = 0, curr_element_type = 0;
     for (auto& block : elements.entity_blocks) {
         if (block.entity_dim != curr_dim || block.entity_tag != curr_tag ||
             block.element_type != curr_element_type) {
@@ -86,9 +86,9 @@ void regroup_elements_into_blocks(MshSpec& spec)
             curr_block.entity_tag = block.entity_tag;
             curr_block.element_type = block.element_type;
 
-            curr_dim = static_cast<size_t>(block.entity_dim);
-            curr_tag = static_cast<size_t>(block.entity_tag);
-            curr_element_type = static_cast<size_t>(block.element_type);
+            curr_dim = block.entity_dim;
+            curr_tag = block.entity_tag;
+            curr_element_type = block.element_type;
         }
 
         auto& curr_block = element_blocks.back();

@@ -33,7 +33,7 @@ if(NOT MSVC)
     target_compile_options(mshio PRIVATE -Wconversion -Wall -Werror
         -Wno-deprecated-declarations)
 else()
-    target_compile_options(mshio PRIVATE "/wd4996")
+    target_compile_options(mshio PRIVATE /wd4996)
 endif()
 target_include_directories(mshio PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
@@ -55,7 +55,7 @@ if (MSHIO_PYTHON)
     if (NOT MSVC)
         target_compile_options(pymshio PRIVATE -Wno-deprecated-declarations)
     else()
-        target_compile_options(pymshio PRIVATE "/wd4996")
+        target_compile_options(pymshio PRIVATE /wd4996)
     endif()
     target_link_libraries(pymshio PUBLIC mshio::mshio)
     install(TARGETS pymshio LIBRARY DESTINATION .)
@@ -79,7 +79,7 @@ if (MSHIO_BUILD_EXAMPLES)
     if (NOT MSVC)
         target_compile_options(msh_inspect PRIVATE -Wno-deprecated-declarations)
     else()
-        target_compile_options(msh_inspect PRIVATE "/wd4996")
+        target_compile_options(msh_inspect PRIVATE /wd4996)
     endif()
 endif()
 
@@ -101,7 +101,7 @@ if (MSHIO_BUILD_TESTS)
         target_compile_options(test_MshIO PRIVATE -Wconversion -Wall -Werror
             -Wno-deprecated-declarations)
     else()
-        target_compile_options(test_MshIO PRIVATE "/MP /wd4996")
+        target_compile_options(test_MshIO PRIVATE /MP /wd4996)
     endif()
 
     if (SANITIZE_ADDRESS OR

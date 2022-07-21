@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <catch2/catch.hpp>
 #include <sstream>
 
@@ -570,7 +571,7 @@ TEST_CASE("all data", "[io][data]")
 
     MshSpec spec;
     SECTION("binary") { spec.mesh_format.file_type = 1; }
-    //SECTION("ascii") { spec.mesh_format.file_type = 0; }
+    // SECTION("ascii") { spec.mesh_format.file_type = 0; }
 
     // Add nodes
     {

@@ -65,7 +65,8 @@ NB_MODULE(pymshio, m)
             "tags",
             [](mshio::NodeBlock &block) {
                 size_t shape[] = {block.tags.size()};
-                return nbArray<size_t>(reinterpret_cast<void *>(block.tags.data()), 1, shape);
+                nb::object owner = nb::cast(&block);
+                return nbArray<size_t>(reinterpret_cast<void *>(block.tags.data()), 1, shape, owner);
             },
             [](mshio::NodeBlock &block, nbArray<size_t> tensor) {
                 // Memory should be managed by C++, so we need to copy numpy
@@ -82,7 +83,8 @@ NB_MODULE(pymshio, m)
                     shape[1] += block.entity_dim;
                 }
                 assert(block.data.size() == shape[0] * shape[1]);
-                return nbMatrix<Float>(reinterpret_cast<void *>(block.data.data()), 2, shape);
+                nb::object owner = nb::cast(&block);
+                return nbMatrix<Float>(reinterpret_cast<void *>(block.data.data()), 2, shape, owner);
             },
             [](mshio::NodeBlock &block, nbMatrix<Float> tensor) {
                 // Memory should be managed by C++, so we need to copy numpy
@@ -112,7 +114,8 @@ NB_MODULE(pymshio, m)
                 assert(block.data.size() % block.num_elements_in_block == 0);
                 size_t shape[] = {
                     block.num_elements_in_block, block.data.size() / block.num_elements_in_block};
-                return nbMatrix<size_t>(reinterpret_cast<void *>(block.data.data()), 2, shape);
+                nb::object owner = nb::cast(&block);
+                return nbMatrix<size_t>(reinterpret_cast<void *>(block.data.data()), 2, shape, owner);
             },
             [](mshio::ElementBlock &block, nbMatrix<size_t> tensor) {
                 copy_memory(tensor, block.data);

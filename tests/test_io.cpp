@@ -1,5 +1,5 @@
-#include <algorithm>
 #include <catch2/catch.hpp>
+#include <numeric>
 #include <sstream>
 
 #include <mshio/mshio.h>

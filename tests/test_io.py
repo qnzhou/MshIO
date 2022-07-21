@@ -60,3 +60,17 @@ class TestNodes:
         assert len(block.data) == 2
         assert block.data.shape[1] == 4
         assert np.all(block.data == facets)
+
+    def test_data(self):
+        data = mshio.Data()
+        data.header.string_tags = ["test"]
+        data.header.real_tags = [0.]
+        data.header.int_tags = [0, 1, 3, 1]
+
+        data.tags = np.array([1, 2, 3], dtype = int)
+        data.data = np.array([1., 2., 3.]).reshape((3, 1))
+
+        assert len(data.tags) == 3
+        assert np.all(data.tags == [1, 2, 3])
+        assert len(data.data) == 3
+        assert np.all(data.data.ravel() == [1., 2., 3.])

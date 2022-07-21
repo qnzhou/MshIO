@@ -66,7 +66,8 @@ NB_MODULE(pymshio, m)
             [](mshio::NodeBlock &block) {
                 size_t shape[] = {block.tags.size()};
                 nb::object owner = nb::cast(&block);
-                return nbArray<size_t>(reinterpret_cast<void *>(block.tags.data()), 1, shape, owner);
+                return nbArray<size_t>(
+                    reinterpret_cast<void *>(block.tags.data()), 1, shape, owner);
             },
             [](mshio::NodeBlock &block, nbArray<size_t> tensor) {
                 // Memory should be managed by C++, so we need to copy numpy
@@ -84,7 +85,8 @@ NB_MODULE(pymshio, m)
                 }
                 assert(block.data.size() == shape[0] * shape[1]);
                 nb::object owner = nb::cast(&block);
-                return nbMatrix<Float>(reinterpret_cast<void *>(block.data.data()), 2, shape, owner);
+                return nbMatrix<Float>(
+                    reinterpret_cast<void *>(block.data.data()), 2, shape, owner);
             },
             [](mshio::NodeBlock &block, nbMatrix<Float> tensor) {
                 // Memory should be managed by C++, so we need to copy numpy
@@ -115,7 +117,8 @@ NB_MODULE(pymshio, m)
                 size_t shape[] = {
                     block.num_elements_in_block, block.data.size() / block.num_elements_in_block};
                 nb::object owner = nb::cast(&block);
-                return nbMatrix<size_t>(reinterpret_cast<void *>(block.data.data()), 2, shape, owner);
+                return nbMatrix<size_t>(
+                    reinterpret_cast<void *>(block.data.data()), 2, shape, owner);
             },
             [](mshio::ElementBlock &block, nbMatrix<size_t> tensor) {
                 copy_memory(tensor, block.data);
@@ -136,16 +139,32 @@ NB_MODULE(pymshio, m)
         .def_readwrite("real_tags", &mshio::DataHeader::real_tags)
         .def_readwrite("int_tags", &mshio::DataHeader::int_tags);
 
-    nb::class_<mshio::DataEntry>(m, "DataEntry")
-        .def(nb::init<>())
-        .def_readwrite("tag", &mshio::DataEntry::tag)
-        .def_readwrite("num_nodes_per_elements", &mshio::DataEntry::num_nodes_per_element)
-        .def_readwrite("data", &mshio::DataEntry::data);
-
     nb::class_<mshio::Data>(m, "Data")
         .def(nb::init<>())
         .def_readwrite("header", &mshio::Data::header)
-        .def_readwrite("entries", &mshio::Data::entries);
+        .def_readwrite("nodes_per_element", &mshio::Data::nodes_per_element)
+        .def_property(
+            "tags",
+            [](mshio::Data &data) {
+                size_t shape[] = {data.tags.size()};
+                nb::object owner = nb::cast(&data);
+                return nbArray<size_t>(reinterpret_cast<void *>(data.tags.data()), 1, shape, owner);
+            },
+            [](mshio::Data &data, nbArray<size_t> tensor) { copy_memory(tensor, data.tags); })
+        .def_property(
+            "data",
+            [](mshio::Data &data) {
+                const size_t num_entries = static_cast<size_t>(data.header.int_tags[2]);
+                const size_t num_fields = static_cast<size_t>(data.header.int_tags[1]);
+                const size_t entry_size =
+                    data.nodes_per_element == 0 ? num_fields : num_fields * data.nodes_per_element;
+                size_t shape[] = {num_entries, entry_size};
+                assert(data.data.size() == num_entries * entry_size);
+                nb::object owner = nb::cast(&data);
+                return nbMatrix<double>(
+                    reinterpret_cast<void *>(data.data.data()), 2, shape, owner);
+            },
+            [](mshio::Data &data, nbMatrix<double> tensor) { copy_memory(tensor, data.data); });
 
     nb::class_<mshio::PointEntity>(m, "PointEntity")
         .def(nb::init<>())

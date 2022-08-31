@@ -6,11 +6,14 @@
 #include <mshio/exception.h>
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <fstream>
+#include <limits>
+#include <map>
+#include <set>
 #include <sstream>
 #include <string>
-#include <limits>
 
 
 namespace mshio {
@@ -75,6 +78,22 @@ void load_elements_binary(std::istream& in, MshSpec& spec)
 } // namespace v41
 
 namespace v22 {
+
+namespace {
+template <typename Entity>
+void create_entities(
+    const std::map<int, std::set<int>>& entity_tag_to_physical_tags, std::vector<Entity>& entities)
+{
+    for (const auto& entry : entity_tag_to_physical_tags) {
+        entities.emplace_back();
+        Entity& entity = entities.back();
+        entity.tag = entry.first;
+        entity.physical_group_tags.insert(
+            entity.physical_group_tags.end(), entry.second.begin(), entry.second.end());
+    }
+}
+} // namespace
+
 void load_elements_ascii(std::istream& in, MshSpec& spec)
 {
     Elements& elements = spec.elements;
@@ -90,6 +109,8 @@ void load_elements_ascii(std::istream& in, MshSpec& spec)
     int num_tags;
     std::vector<int> tags;
     std::vector<int> node_ids;
+
+    std::array<std::map<int, std::set<int>>, 4> entity_tag_to_physical_tags;
 
     for (size_t i = 0; i < num_elements; i++) {
         in >> element_num;
@@ -115,7 +136,20 @@ void load_elements_ascii(std::istream& in, MshSpec& spec)
         auto& block = elements.entity_blocks.back();
         block.num_elements_in_block = 1;
         block.entity_dim = get_element_dim(element_type);
-        if (tags.size() > 0) {
+        if (tags.size() > 1) {
+            // By default, the first tag is the tag of the physical entity to which the element
+            // belongs; the second is the tag of the elementary model entity to which the element
+            // belongs; [...]. Gmsh and most codes using the MSH 2 format require at least the
+            // first two tags (physical and elementary tags).
+            block.entity_tag = tags[1];
+            auto it = entity_tag_to_physical_tags[block.entity_dim].find(tags[1]);
+            if (it == entity_tag_to_physical_tags[block.entity_dim].end()) {
+                entity_tag_to_physical_tags[block.entity_dim][tags[1]] = {tags[0]};
+            } else {
+                it->second.insert(tags[0]);
+            }
+        } else if (tags.size() > 0) {
+            // This is undefined
             block.entity_tag = tags.front();
         } else {
             block.entity_tag = 1;
@@ -128,6 +162,11 @@ void load_elements_ascii(std::istream& in, MshSpec& spec)
             block.data[j + 1] = static_cast<size_t>(node_ids[j]);
         }
     }
+
+    create_entities(entity_tag_to_physical_tags[0], spec.entities.points);
+    create_entities(entity_tag_to_physical_tags[1], spec.entities.curves);
+    create_entities(entity_tag_to_physical_tags[2], spec.entities.surfaces);
+    create_entities(entity_tag_to_physical_tags[3], spec.entities.volumes);
 }
 
 void load_elements_binary(std::istream& in, MshSpec& spec)
@@ -136,6 +175,8 @@ void load_elements_binary(std::istream& in, MshSpec& spec)
     in >> elements.num_elements;
     elements.entity_blocks.reserve(elements.num_elements);
     eat_white_space(in, 1);
+
+    std::array<std::map<int, std::set<int>>, 4> entity_tag_to_physical_tags;
 
     std::vector<int32_t> tags, node_ids;
     int32_t min_tag = std::numeric_limits<int32_t>::max();
@@ -166,7 +207,20 @@ void load_elements_binary(std::istream& in, MshSpec& spec)
             ElementBlock& block = elements.entity_blocks.back();
             block.num_elements_in_block = 1;
             block.entity_dim = get_element_dim(element_type);
-            if (tags.size() > 0) {
+            if (tags.size() > 1) {
+                // "By default, the first tag is the tag of the physical entity to which the element
+                // belongs; the second is the tag of the elementary model entity to which the
+                // element belongs; [...]. Gmsh and most codes using the MSH 2 format require at
+                // least the first two tags (physical and elementary tags).
+                block.entity_tag = tags[1];
+                auto it = entity_tag_to_physical_tags[block.entity_dim].find(tags[1]);
+                if (it == entity_tag_to_physical_tags[block.entity_dim].end()) {
+                    entity_tag_to_physical_tags[block.entity_dim][tags[1]] = {tags[0]};
+                } else {
+                    it->second.insert(tags[0]);
+                }
+            } else if (tags.size() > 0) {
+                // This is undefined
                 block.entity_tag = tags.front();
             } else {
                 block.entity_tag = 1;
@@ -189,6 +243,11 @@ void load_elements_binary(std::istream& in, MshSpec& spec)
     elements.num_entity_blocks = elements.entity_blocks.size();
     elements.min_element_tag = std::min(elements.min_element_tag, static_cast<size_t>(min_tag));
     elements.max_element_tag = std::max(elements.max_element_tag, static_cast<size_t>(max_tag));
+
+    create_entities(entity_tag_to_physical_tags[0], spec.entities.points);
+    create_entities(entity_tag_to_physical_tags[1], spec.entities.curves);
+    create_entities(entity_tag_to_physical_tags[2], spec.entities.surfaces);
+    create_entities(entity_tag_to_physical_tags[3], spec.entities.volumes);
 }
 
 } // namespace v22

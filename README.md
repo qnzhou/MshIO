@@ -6,14 +6,36 @@ ASCII and binary encodings for both version 2.2 and version 4.1.
 
 ![build and test](https://github.com/qnzhou/MshIO/workflows/build%20and%20test/badge.svg)
 
+## Build
+
+```sh
+# Build C++ library
+mkdir build
+cd build
+cmake ..
+make
+
+# Build python
+pip install git+https://github.com/qnzhou/MshIO.git
+```
+
 ## Usage
 
+In C++:
 ```c++
 #include <MshIO/mshio.h>
 
 mshio::MshSpec spec = mshio::load_msh("input.msh");
 
 mshio::save_msh("output.msh", spec);
+```
+
+or in Python
+```python
+import mshio
+
+spec = mshio.load_msh("input.msh")
+mshio.save_msh("output.msh", spec)
 ```
 
 ## `MshSpec` data structure

@@ -16,12 +16,7 @@ project(MshIO)
 option(MSHIO_BUILD_TESTS "Build unit tests" OFF)
 option(MSHIO_BUILD_EXAMPLES "Build examples" OFF)
 option(MSHIO_EXT_NANOSPLINE "Enable nanospline extension" OFF)
-
-if (NOT SKBUILD)
-    option(MSHIO_PYTHON "Build python binding" OFF)
-else()
-    set(MSHIO_PYTHON ON CACHE BOOL "Build python binding" FORCE)
-endif()
+option(MSHIO_PYTHON "Build python binding" OFF)
 
 include(FetchContent)
 

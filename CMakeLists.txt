@@ -7,12 +7,13 @@
 #   target_link_libraries(your_target mshio::mshio)
 #
 # ============================================================================
-
+message(STATUS "CMake version: ${CMAKE_VERSION}")
 cmake_minimum_required(VERSION 3.11)
 set(CMAKE_CXX_STANDARD 14)
 
 project(MshIO)
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 option(MSHIO_BUILD_TESTS "Build unit tests" OFF)
 option(MSHIO_BUILD_EXAMPLES "Build examples" OFF)
 option(MSHIO_EXT_NANOSPLINE "Enable nanospline extension" OFF)

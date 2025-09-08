@@ -13,7 +13,6 @@ set(CMAKE_CXX_STANDARD 14)
 
 project(MshIO)
 
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 option(MSHIO_BUILD_TESTS "Build unit tests" OFF)
 option(MSHIO_BUILD_EXAMPLES "Build examples" OFF)
 option(MSHIO_EXT_NANOSPLINE "Enable nanospline extension" OFF)
@@ -28,6 +27,7 @@ add_library(mshio STATIC ${SRC_FILES})
 target_include_directories(mshio PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/include>")
+set_property(TARGET mshio PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 add_library(mshio::mshio ALIAS mshio)
 
@@ -44,6 +44,7 @@ if (MSHIO_PYTHON)
     target_link_libraries(pymshio PUBLIC mshio::mshio)
     install(TARGETS pymshio LIBRARY DESTINATION .)
     add_library(mshio::pymshio ALIAS pymshio)
+    set_property(TARGET pymshio PROPERTY POSITION_INDEPENDENT_CODE ON)
 endif()
 
 
@@ -64,6 +65,7 @@ if (MSHIO_BUILD_TESTS)
     target_link_libraries(test_MshIO mshio::mshio Catch2::Catch2)
     target_compile_definitions(test_MshIO PRIVATE
         MSHIO_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
+    set_property(TARGET test_MshIO PROPERTY POSITION_INDEPENDENT_CODE ON)
     catch_discover_tests(test_MshIO)
 
     if(NOT MSVC)

@@ -9,7 +9,6 @@
 # ============================================================================
 message(STATUS "CMake version: ${CMAKE_VERSION}")
 cmake_minimum_required(VERSION 3.11)
-set(CMAKE_CXX_STANDARD 14)
 
 project(MshIO)
 
@@ -28,6 +27,7 @@ target_include_directories(mshio PUBLIC
     "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
     "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/include>")
 set_property(TARGET mshio PROPERTY POSITION_INDEPENDENT_CODE ON)
+target_compile_features(mshio PUBLIC cxx_std_14)
 
 add_library(mshio::mshio ALIAS mshio)
 

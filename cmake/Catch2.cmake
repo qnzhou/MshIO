@@ -17,6 +17,7 @@ CPMAddPackage(
 )
 
 target_compile_features(Catch2 PUBLIC cxx_std_17)
+target_compile_options(Catch2 PUBLIC -Wno-nonnull)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_CXX_COMPILER_VERSION VERSION_LESS 10)
     # See https://github.com/catchorg/Catch2/issues/2654

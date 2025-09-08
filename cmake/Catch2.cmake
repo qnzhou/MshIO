@@ -12,7 +12,7 @@ include(CPM)
 CPMAddPackage(
     NAME catch2
     GITHUB_REPOSITORY catchorg/Catch2
-    GIT_TAG v3.4.0
+    GIT_TAG v3.10.0
     SYSTEM On
 )
 

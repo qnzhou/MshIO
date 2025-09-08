@@ -13,6 +13,7 @@ CPMAddPackage(
     NAME catch2
     GITHUB_REPOSITORY catchorg/Catch2
     GIT_TAG v3.4.0
+    SYSTEM On
 )
 
 target_compile_features(Catch2 PUBLIC cxx_std_17)

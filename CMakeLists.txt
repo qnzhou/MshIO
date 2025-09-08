@@ -18,7 +18,7 @@ option(MSHIO_BUILD_EXAMPLES "Build examples" OFF)
 option(MSHIO_EXT_NANOSPLINE "Enable nanospline extension" OFF)
 option(MSHIO_PYTHON "Build python binding" OFF)
 
-include(FetchContent)
+SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 
 file(GLOB INC_FILES "${PROJECT_SOURCE_DIR}/include/mshio/*.h")
 file(GLOB SRC_FILES "${PROJECT_SOURCE_DIR}/src/*.cpp")
@@ -38,7 +38,7 @@ endif()
 
 
 if (MSHIO_PYTHON)
-    include(cmake/nanobind.cmake)
+    include(nanobind)
     set(PY_SRC_FILE "${PROJECT_SOURCE_DIR}/python/pymshio.cpp")
     nanobind_add_module(pymshio NB_STATIC ${PY_SRC_FILE})
     target_link_libraries(pymshio PUBLIC mshio::mshio)
@@ -57,12 +57,12 @@ endif()
 if (MSHIO_BUILD_TESTS)
     include(CTest)
     enable_testing()
-    include(cmake/Catch2.cmake)
-    include(cmake/sanitizer-cmake.cmake)
+    include(Catch2)
+    include(sanitizer-cmake)
 
     file(GLOB TEST_FILES "${PROJECT_SOURCE_DIR}/tests/*.cpp")
     add_executable(test_MshIO ${TEST_FILES})
-    target_link_libraries(test_MshIO mshio::mshio Catch2::Catch2)
+    target_link_libraries(test_MshIO mshio::mshio Catch2::Catch2WithMain)
     target_compile_definitions(test_MshIO PRIVATE
         MSHIO_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
     set_property(TARGET test_MshIO PROPERTY POSITION_INDEPENDENT_CODE ON)

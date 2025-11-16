@@ -21,8 +21,8 @@ void save_entities_ascii(std::ostream& out, const MshSpec& spec)
 
     for (size_t i = 0; i < entities.points.size(); i++) {
         const PointEntity& point = entities.points[i];
-        out << point.tag << " " << point.x << " " << point.y << " " << point.z
-            << " " << point.physical_group_tags.size();
+        out << point.tag << " " << point.x << " " << point.y << " " << point.z << " "
+            << point.physical_group_tags.size();
         for (size_t j = 0; j < point.physical_group_tags.size(); j++) {
             out << " " << point.physical_group_tags[j];
         }
@@ -31,9 +31,9 @@ void save_entities_ascii(std::ostream& out, const MshSpec& spec)
 
     for (size_t i = 0; i < entities.curves.size(); i++) {
         const CurveEntity& curve = entities.curves[i];
-        out << curve.tag << " " << curve.min_x << " " << curve.min_y << " "
-            << curve.min_z << " " << curve.max_x << " " << curve.max_y << " "
-            << curve.max_z << " " << curve.physical_group_tags.size();
+        out << curve.tag << " " << curve.min_x << " " << curve.min_y << " " << curve.min_z << " "
+            << curve.max_x << " " << curve.max_y << " " << curve.max_z << " "
+            << curve.physical_group_tags.size();
         for (size_t j = 0; j < curve.physical_group_tags.size(); j++) {
             out << " " << curve.physical_group_tags[j];
         }
@@ -46,9 +46,9 @@ void save_entities_ascii(std::ostream& out, const MshSpec& spec)
 
     for (size_t i = 0; i < entities.surfaces.size(); i++) {
         const SurfaceEntity& surface = entities.surfaces[i];
-        out << surface.tag << " " << surface.min_x << " " << surface.min_y << " "
-            << surface.min_z << " " << surface.max_x << " " << surface.max_y << " "
-            << surface.max_z << " " << surface.physical_group_tags.size();
+        out << surface.tag << " " << surface.min_x << " " << surface.min_y << " " << surface.min_z
+            << " " << surface.max_x << " " << surface.max_y << " " << surface.max_z << " "
+            << surface.physical_group_tags.size();
         for (size_t j = 0; j < surface.physical_group_tags.size(); j++) {
             out << " " << surface.physical_group_tags[j];
         }
@@ -61,9 +61,9 @@ void save_entities_ascii(std::ostream& out, const MshSpec& spec)
 
     for (size_t i = 0; i < entities.volumes.size(); i++) {
         const VolumeEntity& volume = entities.volumes[i];
-        out << volume.tag << " " << volume.min_x << " " << volume.min_y << " "
-            << volume.min_z << " " << volume.max_x << " " << volume.max_y << " "
-            << volume.max_z << " " << volume.physical_group_tags.size();
+        out << volume.tag << " " << volume.min_x << " " << volume.min_y << " " << volume.min_z
+            << " " << volume.max_x << " " << volume.max_y << " " << volume.max_z << " "
+            << volume.physical_group_tags.size();
         for (size_t j = 0; j < volume.physical_group_tags.size(); j++) {
             out << " " << volume.physical_group_tags[j];
         }
@@ -96,7 +96,7 @@ void save_entities_binary(std::ostream& out, const MshSpec& spec)
         size_t num_physical_groups = point.physical_group_tags.size();
         out.write(reinterpret_cast<const char*>(&num_physical_groups), sizeof(size_t));
         out.write(reinterpret_cast<const char*>(point.physical_group_tags.data()),
-            static_cast<std::streamsize>(sizeof(size_t) * num_physical_groups));
+            static_cast<std::streamsize>(sizeof(int) * num_physical_groups));
     }
 
     for (size_t i = 0; i < num_curves; i++) {
@@ -111,11 +111,11 @@ void save_entities_binary(std::ostream& out, const MshSpec& spec)
         size_t num_physical_groups = curve.physical_group_tags.size();
         out.write(reinterpret_cast<const char*>(&num_physical_groups), sizeof(size_t));
         out.write(reinterpret_cast<const char*>(curve.physical_group_tags.data()),
-            static_cast<std::streamsize>(sizeof(size_t) * num_physical_groups));
+            static_cast<std::streamsize>(sizeof(int) * num_physical_groups));
         size_t num_boundary_points = curve.boundary_point_tags.size();
         out.write(reinterpret_cast<const char*>(&num_boundary_points), sizeof(size_t));
         out.write(reinterpret_cast<const char*>(curve.boundary_point_tags.data()),
-            static_cast<std::streamsize>(sizeof(size_t) * num_boundary_points));
+            static_cast<std::streamsize>(sizeof(int) * num_boundary_points));
     }
 
     for (size_t i = 0; i < num_surfaces; i++) {
@@ -130,11 +130,11 @@ void save_entities_binary(std::ostream& out, const MshSpec& spec)
         size_t num_physical_groups = surface.physical_group_tags.size();
         out.write(reinterpret_cast<const char*>(&num_physical_groups), sizeof(size_t));
         out.write(reinterpret_cast<const char*>(surface.physical_group_tags.data()),
-            static_cast<std::streamsize>(sizeof(size_t) * num_physical_groups));
+            static_cast<std::streamsize>(sizeof(int) * num_physical_groups));
         size_t num_boundary_curves = surface.boundary_curve_tags.size();
         out.write(reinterpret_cast<const char*>(&num_boundary_curves), sizeof(size_t));
         out.write(reinterpret_cast<const char*>(surface.boundary_curve_tags.data()),
-            static_cast<std::streamsize>(sizeof(size_t) * num_boundary_curves));
+            static_cast<std::streamsize>(sizeof(int) * num_boundary_curves));
     }
 
     for (size_t i = 0; i < num_volumes; i++) {
@@ -149,11 +149,11 @@ void save_entities_binary(std::ostream& out, const MshSpec& spec)
         size_t num_physical_groups = volume.physical_group_tags.size();
         out.write(reinterpret_cast<const char*>(&num_physical_groups), sizeof(size_t));
         out.write(reinterpret_cast<const char*>(volume.physical_group_tags.data()),
-            static_cast<std::streamsize>(sizeof(size_t) * num_physical_groups));
+            static_cast<std::streamsize>(sizeof(int) * num_physical_groups));
         size_t num_boundary_surfaces = volume.boundary_surface_tags.size();
         out.write(reinterpret_cast<const char*>(&num_boundary_surfaces), sizeof(size_t));
         out.write(reinterpret_cast<const char*>(volume.boundary_surface_tags.data()),
-            static_cast<std::streamsize>(sizeof(size_t) * num_boundary_surfaces));
+            static_cast<std::streamsize>(sizeof(int) * num_boundary_surfaces));
     }
 }
 

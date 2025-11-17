@@ -173,14 +173,26 @@ void save_and_load(MshSpec& spec)
     SECTION("v4.1")
     {
         spec.mesh_format.version = "4.1";
-        SECTION("ASCII") { spec.mesh_format.file_type = 0; }
-        SECTION("Binary") { spec.mesh_format.file_type = 1; }
+        SECTION("ASCII")
+        {
+            spec.mesh_format.file_type = 0;
+        }
+        SECTION("Binary")
+        {
+            spec.mesh_format.file_type = 1;
+        }
     }
     SECTION("v2.2")
     {
         spec.mesh_format.version = "2.2";
-        SECTION("ASCII") { spec.mesh_format.file_type = 0; }
-        SECTION("Binary") { spec.mesh_format.file_type = 1; }
+        SECTION("ASCII")
+        {
+            spec.mesh_format.file_type = 0;
+        }
+        SECTION("Binary")
+        {
+            spec.mesh_format.file_type = 1;
+        }
     }
 
     validate_spec(spec);
@@ -604,6 +616,84 @@ TEST_CASE("element node data")
     save_and_load(spec);
 }
 
+TEST_CASE("physical group")
+{
+    using namespace mshio;
+
+    MshSpec spec;
+
+    const int num_vertices = 3;
+    const int DIM = 2;
+
+    {
+        spec.nodes.num_entity_blocks = 1;
+        spec.nodes.num_nodes = num_vertices;
+        spec.nodes.min_node_tag = 1;
+        spec.nodes.max_node_tag = num_vertices;
+
+        spec.nodes.entity_blocks.resize(1);
+        NodeBlock& block = spec.nodes.entity_blocks[0];
+        block.num_nodes_in_block = num_vertices;
+        block.tags.reserve(num_vertices);
+        block.data.reserve(num_vertices * 3);
+        block.entity_dim = DIM;
+        block.entity_tag = 1;
+
+        block.tags.push_back(1);
+        block.data.push_back(0.0);
+        block.data.push_back(0.0);
+        block.data.push_back(0.0);
+        block.tags.push_back(2);
+        block.data.push_back(1.0);
+        block.data.push_back(0.0);
+        block.data.push_back(0.0);
+        block.tags.push_back(3);
+        block.data.push_back(1.0);
+        block.data.push_back(1.0);
+        block.data.push_back(0.0);
+    }
+    {
+        spec.elements.num_entity_blocks = 1;
+        spec.elements.num_elements = 1;
+        spec.elements.min_element_tag = 1;
+        spec.elements.max_element_tag = 1;
+        spec.elements.entity_blocks.resize(1);
+
+        auto& element_block = spec.elements.entity_blocks[0];
+        element_block.entity_dim = DIM;
+        element_block.entity_tag = 1;
+        element_block.element_type = 2;
+        element_block.num_elements_in_block = 1;
+        element_block.data.push_back(1); // Element tag
+        element_block.data.push_back(1);
+        element_block.data.push_back(2);
+        element_block.data.push_back(3);
+    }
+    // entities and physical groups
+    {
+        spec.physical_groups.resize(1);
+        PhysicalGroup& ph = spec.physical_groups[0];
+        ph.dim = 2;
+        ph.tag = 1;
+        ph.name = "my_physical_group";
+
+        spec.entities.surfaces.resize(1);
+        SurfaceEntity& e = spec.entities.surfaces[0];
+        e.tag = 1;
+        e.min_x = 0.0;
+        e.min_y = 0.0;
+        e.min_z = 0.0;
+        e.max_x = 1.0;
+        e.max_y = 1.0;
+        e.max_z = 0.0;
+        e.physical_group_tags.push_back(1);
+    }
+
+    validate_spec(spec);
+    save_and_load(spec);
+    //spec.mesh_format.file_type = 1; // binary
+    // save_msh("test.msh", spec);
+}
 
 #ifdef MSHIO_EXT_NANOSPLINE
 TEST_CASE("NanoSpline extension", "[nanospline][ext][io]")

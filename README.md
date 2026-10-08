@@ -38,15 +38,55 @@ spec = mshio.load_msh("input.msh")
 mshio.save_msh("output.msh", spec)
 ```
 
-In Python, list-valued fields holding MshIO objects (`entity_blocks`, `entries`,
-entity lists, `physical_groups` and the data lists) return copies. Modify an
-element and assign the whole list back:
+Python object collections (`entity_blocks`, `entries`, entity collections,
+`physical_groups`, and the data collections) are live vector wrappers, not
+Python lists. Accessing a collection or its length does not copy its elements.
+Indexing and iteration return independent element copies to avoid dangling
+references when the vector changes. Modify an element and assign only that item
+back:
 
 ```python
 blocks = spec.nodes.entity_blocks
-blocks[0].entity_tag = 2
-spec.nodes.entity_blocks = blocks
+block = blocks[0]
+block.entity_tag = 2
+coordinates = block.data
+coordinates[0] += 1.0
+block.data = coordinates
+blocks[0] = block
 ```
+
+Collection operations such as `append`, `pop`, and `clear` modify the stored
+mesh directly. Whole-collection assignment still accepts Python sequences.
+Keep mesh counts and tag bounds consistent when changing collection or payload
+sizes; `validate_spec()` checks these invariants.
+
+Large numeric fields return fresh, flat, writable NumPy snapshots:
+
+| Field | NumPy dtype |
+| --- | --- |
+| `NodeBlock.tags`, `ElementBlock.data` | `uint64` |
+| `NodeBlock.data`, `DataEntry.data` | `float64` |
+
+Editing a snapshot does not change the mesh until it is assigned back. Snapshots
+remain valid after replacing their source field or destroying the mesh. Setters
+accept one-dimensional CPU arrays and Python sequences: matching contiguous
+arrays are copied directly, while other supported inputs use checked scalar
+conversion. Integer identifiers are not silently narrowed or wrapped. Small
+metadata vectors (header tags, physical-group tags, and boundary tags) retain
+their Python-list copy semantics.
+
+Nested object collections also require assignment back at each item boundary:
+
+```python
+dataset = spec.node_data[0]
+entry = dataset.entries[0]
+entry.data = [1.0, 2.0, 3.0]
+dataset.entries[0] = entry
+spec.node_data[0] = dataset
+```
+
+Mesh and dataset representations summarize C++ fields directly, without copying
+numeric payloads.
 
 ## `MshSpec` data structure
 

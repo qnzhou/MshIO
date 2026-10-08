@@ -2,14 +2,60 @@
 
 
 #include <nanobind/nanobind.h>
+#include <nanobind/ndarray.h>
+#include <nanobind/stl/bind_vector.h>
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
 
 namespace nb = nanobind;
 
-// Lists of bound classes are returned as copies. A reference into std::vector storage would
-// dangle once the vector is reassigned, so update these fields by assigning a whole list.
-constexpr auto copy_list = nb::rv_policy::copy;
+NB_MAKE_OPAQUE(std::vector<mshio::NodeBlock>);
+NB_MAKE_OPAQUE(std::vector<mshio::ElementBlock>);
+NB_MAKE_OPAQUE(std::vector<mshio::DataEntry>);
+NB_MAKE_OPAQUE(std::vector<mshio::Data>);
+NB_MAKE_OPAQUE(std::vector<mshio::PointEntity>);
+NB_MAKE_OPAQUE(std::vector<mshio::CurveEntity>);
+NB_MAKE_OPAQUE(std::vector<mshio::SurfaceEntity>);
+NB_MAKE_OPAQUE(std::vector<mshio::VolumeEntity>);
+NB_MAKE_OPAQUE(std::vector<mshio::PhysicalGroup>);
+
+namespace {
+
+template <typename Class, typename Scalar>
+void def_array(nb::class_<Class>& binding, const char* name,
+    std::vector<Scalar> Class::*member, const char* doc)
+{
+    binding.def_prop_rw(name,
+        [member](Class& self) {
+            auto& values = self.*member;
+            return nb::ndarray<nb::numpy, Scalar, nb::ndim<1>>(
+                values.data(), {values.size()});
+        },
+        [member](Class& self, nb::handle source) {
+            using Array = nb::ndarray<const Scalar, nb::ndim<1>, nb::c_contig,
+                nb::device::cpu>;
+            Array array;
+            auto& values = self.*member;
+            // Disable implicit ndarray casts: integer narrowing must be checked elementwise.
+            if (nb::try_cast(source, array, false)) {
+                if (array.size() == 0) {
+                    values.clear();
+                } else {
+                    values.assign(array.data(), array.data() + array.size());
+                }
+            } else {
+                if (nb::ndarray_check(source)) {
+                    auto input = nb::cast<nb::ndarray<nb::ro, nb::device::cpu>>(source, false);
+                    if (input.ndim() != 1) {
+                        throw nb::type_error("Expected a one-dimensional numeric array");
+                    }
+                }
+                values = nb::cast<std::vector<Scalar>>(source);
+            }
+        }, nb::rv_policy::copy, doc);
+}
+
+} // namespace
 
 NB_MODULE(pymshio, m)
 {
@@ -24,14 +70,12 @@ NB_MODULE(pymshio, m)
                    ", data_size=" + std::to_string(self.data_size) + ")";
         });
 
-    nb::class_<mshio::NodeBlock>(m, "NodeBlock")
+    auto node_block = nb::class_<mshio::NodeBlock>(m, "NodeBlock")
         .def(nb::init<>())
         .def_rw("entity_dim", &mshio::NodeBlock::entity_dim)
         .def_rw("entity_tag", &mshio::NodeBlock::entity_tag)
         .def_rw("parametric", &mshio::NodeBlock::parametric)
         .def_rw("num_nodes_in_block", &mshio::NodeBlock::num_nodes_in_block)
-        .def_rw("tags", &mshio::NodeBlock::tags, "Unsigned 64-bit node identifiers")
-        .def_rw("data", &mshio::NodeBlock::data)
         .def("__repr__", [](const mshio::NodeBlock& self) {
             return "NodeBlock(entity_dim=" + std::to_string(self.entity_dim) +
                    ", entity_tag=" + std::to_string(self.entity_tag) +
@@ -39,6 +83,9 @@ NB_MODULE(pymshio, m)
                    ", num_nodes_in_block=" + std::to_string(self.num_nodes_in_block) +
                    ", tags=" + std::to_string(self.tags.size()) + ")";
         });
+    def_array(node_block, "tags", &mshio::NodeBlock::tags, "Owned uint64 node identifier snapshot");
+    def_array(node_block, "data", &mshio::NodeBlock::data, "Owned float64 coordinate snapshot");
+    nb::bind_vector<std::vector<mshio::NodeBlock>>(m, "NodeBlocks");
 
     nb::class_<mshio::Nodes>(m, "Nodes")
         .def(nb::init<>())
@@ -46,7 +93,7 @@ NB_MODULE(pymshio, m)
         .def_rw("num_nodes", &mshio::Nodes::num_nodes)
         .def_rw("min_node_tag", &mshio::Nodes::min_node_tag)
         .def_rw("max_node_tag", &mshio::Nodes::max_node_tag)
-        .def_rw("entity_blocks", &mshio::Nodes::entity_blocks, copy_list)
+        .def_rw("entity_blocks", &mshio::Nodes::entity_blocks)
         .def("__repr__", [](const mshio::Nodes& self) {
             return "Nodes(num_entity_blocks=" + std::to_string(self.num_entity_blocks) +
                    ", num_nodes=" + std::to_string(self.num_nodes) +
@@ -54,19 +101,21 @@ NB_MODULE(pymshio, m)
                    ", max_node_tag=" + std::to_string(self.max_node_tag) + ")";
         });
 
-    nb::class_<mshio::ElementBlock>(m, "ElementBlock")
+    auto element_block = nb::class_<mshio::ElementBlock>(m, "ElementBlock")
         .def(nb::init<>())
         .def_rw("entity_dim", &mshio::ElementBlock::entity_dim)
         .def_rw("entity_tag", &mshio::ElementBlock::entity_tag)
         .def_rw("element_type", &mshio::ElementBlock::element_type)
         .def_rw("num_elements_in_block", &mshio::ElementBlock::num_elements_in_block)
-        .def_rw("data", &mshio::ElementBlock::data, "Unsigned 64-bit element tags and connectivity")
         .def("__repr__", [](const mshio::ElementBlock& self) {
             return "ElementBlock(entity_dim=" + std::to_string(self.entity_dim) +
                    ", entity_tag=" + std::to_string(self.entity_tag) +
                    ", element_type=" + std::to_string(self.element_type) +
                    ", num_elements_in_block=" + std::to_string(self.num_elements_in_block) + ")";
         });
+    def_array(element_block, "data", &mshio::ElementBlock::data,
+        "Owned uint64 element tag and connectivity snapshot");
+    nb::bind_vector<std::vector<mshio::ElementBlock>>(m, "ElementBlocks");
 
     nb::class_<mshio::Elements>(m, "Elements")
         .def(nb::init<>())
@@ -74,7 +123,7 @@ NB_MODULE(pymshio, m)
         .def_rw("num_elements", &mshio::Elements::num_elements)
         .def_rw("min_element_tag", &mshio::Elements::min_element_tag)
         .def_rw("max_element_tag", &mshio::Elements::max_element_tag)
-        .def_rw("entity_blocks", &mshio::Elements::entity_blocks, copy_list)
+        .def_rw("entity_blocks", &mshio::Elements::entity_blocks)
         .def("__repr__", [](const mshio::Elements& self) {
             return "Elements(num_entity_blocks=" + std::to_string(self.num_entity_blocks) +
                    ", num_elements=" + std::to_string(self.num_elements) +
@@ -93,27 +142,30 @@ NB_MODULE(pymshio, m)
                    ", int_tags=" + std::to_string(self.int_tags.size()) + ")";
         });
 
-    nb::class_<mshio::DataEntry>(m, "DataEntry")
+    auto data_entry = nb::class_<mshio::DataEntry>(m, "DataEntry")
         .def(nb::init<>())
         .def_rw("tag", &mshio::DataEntry::tag, "Signed 32-bit postprocessing tag (Gmsh int field)")
         .def_rw("num_nodes_per_elements", &mshio::DataEntry::num_nodes_per_element)
-        .def_rw("data", &mshio::DataEntry::data)
         .def("__repr__", [](const mshio::DataEntry& self) {
             return "DataEntry(tag=" + std::to_string(self.tag) +
                    ", num_nodes_per_elements=" + std::to_string(self.num_nodes_per_element) +
                    ", data=" + std::to_string(self.data.size()) + ")";
         });
+    def_array(data_entry, "data", &mshio::DataEntry::data, "Owned float64 postprocessing snapshot");
+    nb::bind_vector<std::vector<mshio::DataEntry>>(m, "DataEntries");
 
     nb::class_<mshio::Data>(m, "Data")
         .def(nb::init<>())
         .def_rw("header", &mshio::Data::header)
-        .def_rw("entries", &mshio::Data::entries, copy_list)
+        .def_rw("entries", &mshio::Data::entries)
         .def("__repr__", [](const mshio::Data& self) {
-            auto py_header = nb::cast(self.header);
-            auto py_entries = nb::cast(self.entries);
-            return "Data(header=" + nb::cast<std::string>(py_header.attr("__repr__")()) +
-                   ", entries=" + nb::cast<std::string>(py_entries.attr("__repr__")()) + ")";
+            return "Data(header=DataHeader(string_tags=" +
+                   std::to_string(self.header.string_tags.size()) +
+                   ", real_tags=" + std::to_string(self.header.real_tags.size()) +
+                   ", int_tags=" + std::to_string(self.header.int_tags.size()) +
+                   "), entries=" + std::to_string(self.entries.size()) + ")";
         });
+    nb::bind_vector<std::vector<mshio::Data>>(m, "DataSets");
 
     nb::class_<mshio::PointEntity>(m, "PointEntity")
         .def(nb::init<>())
@@ -127,6 +179,7 @@ NB_MODULE(pymshio, m)
                    ", y=" + std::to_string(self.y) + ", z=" + std::to_string(self.z) +
                    ", physical_group_tags=" + std::to_string(self.physical_group_tags.size()) + ")";
         });
+    nb::bind_vector<std::vector<mshio::PointEntity>>(m, "PointEntities");
 
     nb::class_<mshio::CurveEntity>(m, "CurveEntity")
         .def(nb::init<>())
@@ -150,6 +203,7 @@ NB_MODULE(pymshio, m)
                    ", physical_group_tags=" + std::to_string(self.physical_group_tags.size()) +
                    ", boundary_point_tags=" + std::to_string(self.boundary_point_tags.size()) + ")";
         });
+    nb::bind_vector<std::vector<mshio::CurveEntity>>(m, "CurveEntities");
 
     nb::class_<mshio::SurfaceEntity>(m, "SurfaceEntity")
         .def(nb::init<>())
@@ -173,6 +227,7 @@ NB_MODULE(pymshio, m)
                    ", physical_group_tags=" + std::to_string(self.physical_group_tags.size()) +
                    ", boundary_curve_tags=" + std::to_string(self.boundary_curve_tags.size()) + ")";
         });
+    nb::bind_vector<std::vector<mshio::SurfaceEntity>>(m, "SurfaceEntities");
 
     nb::class_<mshio::VolumeEntity>(m, "VolumeEntity")
         .def(nb::init<>())
@@ -197,14 +252,15 @@ NB_MODULE(pymshio, m)
                    ", boundary_surface_tags=" + std::to_string(self.boundary_surface_tags.size()) +
                    ")";
         });
+    nb::bind_vector<std::vector<mshio::VolumeEntity>>(m, "VolumeEntities");
 
     nb::class_<mshio::Entities>(m, "Entities")
         .def(nb::init<>())
         .def("empty", &mshio::Entities::empty)
-        .def_rw("points", &mshio::Entities::points, copy_list)
-        .def_rw("curves", &mshio::Entities::curves, copy_list)
-        .def_rw("surfaces", &mshio::Entities::surfaces, copy_list)
-        .def_rw("volumes", &mshio::Entities::volumes, copy_list)
+        .def_rw("points", &mshio::Entities::points)
+        .def_rw("curves", &mshio::Entities::curves)
+        .def_rw("surfaces", &mshio::Entities::surfaces)
+        .def_rw("volumes", &mshio::Entities::volumes)
         .def("__repr__", [](const mshio::Entities& self) {
             return "Entities(points=" + std::to_string(self.points.size()) +
                    ", curves=" + std::to_string(self.curves.size()) +
@@ -221,6 +277,7 @@ NB_MODULE(pymshio, m)
             return "PhysicalGroup(dim=" + std::to_string(self.dim) +
                    ", tag=" + std::to_string(self.tag) + ", name=" + self.name + ")";
         });
+    nb::bind_vector<std::vector<mshio::PhysicalGroup>>(m, "PhysicalGroups");
 
     nb::class_<mshio::MshSpec>(m, "MshSpec")
         .def(nb::init<>())
@@ -228,31 +285,25 @@ NB_MODULE(pymshio, m)
         .def_rw("nodes", &mshio::MshSpec::nodes)
         .def_rw("elements", &mshio::MshSpec::elements)
         .def_rw("entities", &mshio::MshSpec::entities)
-        .def_rw("physical_groups", &mshio::MshSpec::physical_groups, copy_list)
-        .def_rw("node_data", &mshio::MshSpec::node_data, copy_list)
-        .def_rw("element_data", &mshio::MshSpec::element_data, copy_list)
-        .def_rw("element_node_data", &mshio::MshSpec::element_node_data, copy_list)
+        .def_rw("physical_groups", &mshio::MshSpec::physical_groups)
+        .def_rw("node_data", &mshio::MshSpec::node_data)
+        .def_rw("element_data", &mshio::MshSpec::element_data)
+        .def_rw("element_node_data", &mshio::MshSpec::element_node_data)
         .def("__repr__", [](const mshio::MshSpec& self) {
-            auto py_mesh_format = nb::cast(self.mesh_format);
-            auto py_nodes = nb::cast(self.nodes);
-            auto py_elements = nb::cast(self.elements);
-            auto py_entities = nb::cast(self.entities);
-            auto py_physical_groups = nb::cast(self.physical_groups);
-            auto py_node_data = nb::cast(self.node_data);
-            auto py_element_data = nb::cast(self.element_data);
-            auto py_element_node_data = nb::cast(self.element_node_data);
-
-            return "MshSpec(mesh_format=" +
-                   nb::cast<std::string>(py_mesh_format.attr("__repr__")()) +
-                   ", nodes=" + nb::cast<std::string>(py_nodes.attr("__repr__")()) +
-                   ", elements=" + nb::cast<std::string>(py_elements.attr("__repr__")()) +
-                   ", entities=" + nb::cast<std::string>(py_entities.attr("__repr__")()) +
-                   ", physical_groups=" +
-                   nb::cast<std::string>(py_physical_groups.attr("__repr__")()) +
-                   ", node_data=" + nb::cast<std::string>(py_node_data.attr("__repr__")()) +
-                   ", element_data=" + nb::cast<std::string>(py_element_data.attr("__repr__")()) +
-                   ", element_node_data=" +
-                   nb::cast<std::string>(py_element_node_data.attr("__repr__")()) + ")";
+            return "MshSpec(version=" + self.mesh_format.version +
+                   ", file_type=" + std::to_string(self.mesh_format.file_type) +
+                   ", nodes=" + std::to_string(self.nodes.num_nodes) +
+                   ", node_blocks=" + std::to_string(self.nodes.entity_blocks.size()) +
+                   ", elements=" + std::to_string(self.elements.num_elements) +
+                   ", element_blocks=" + std::to_string(self.elements.entity_blocks.size()) +
+                   ", points=" + std::to_string(self.entities.points.size()) +
+                   ", curves=" + std::to_string(self.entities.curves.size()) +
+                   ", surfaces=" + std::to_string(self.entities.surfaces.size()) +
+                   ", volumes=" + std::to_string(self.entities.volumes.size()) +
+                   ", physical_groups=" + std::to_string(self.physical_groups.size()) +
+                   ", node_data=" + std::to_string(self.node_data.size()) +
+                   ", element_data=" + std::to_string(self.element_data.size()) +
+                   ", element_node_data=" + std::to_string(self.element_node_data.size()) + ")";
         });
 
     m.def("load_msh", nb::overload_cast<const std::string&>(&mshio::load_msh));

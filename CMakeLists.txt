@@ -74,6 +74,13 @@ if (MSHIO_BUILD_TESTS)
 
     catch_discover_tests(test_MshIO)
 
+    if (MSHIO_PYTHON)
+        add_test(NAME test_MshIO_python
+            COMMAND ${Python_EXECUTABLE} ${PROJECT_SOURCE_DIR}/tests/test_python.py)
+        set_tests_properties(test_MshIO_python PROPERTIES
+            ENVIRONMENT "PYTHONPATH=$<TARGET_FILE_DIR:pymshio>")
+    endif()
+
     if(NOT MSVC)
         target_compile_options(test_MshIO PRIVATE -Wconversion -Wall -Werror)
     else()

@@ -34,9 +34,8 @@ void load_elements(std::istream& in, MshSpec& spec)
         read_field(in, elements.num_elements, binary);
         read_field(in, elements.min_element_tag, binary);
         read_field(in, elements.max_element_tag, binary);
-        resize_checked(elements.entity_blocks, elements.num_entity_blocks);
         std::uint64_t total = 0;
-        for (auto& block : elements.entity_blocks) {
+        read_records(elements.entity_blocks, elements.num_entity_blocks, [&](ElementBlock& block) {
             read_field(in, block.entity_dim, binary);
             read_field(in, block.entity_tag, binary);
             read_field(in, block.element_type, binary);
@@ -47,14 +46,13 @@ void load_elements(std::istream& in, MshSpec& spec)
             if (total > elements.num_elements) throw InvalidFormat("Inconsistent MSH element count");
             const auto stride = nodes_per_element(block.element_type) + 1;
             read_values(in, block.data, checked_product(block.num_elements_in_block, stride), binary);
-        }
+        });
         if (total != elements.num_elements) throw InvalidFormat("Inconsistent MSH element count");
     } else if (spec.mesh_format.version == "2.2") {
         std::uint64_t count;
         read_ascii(in, count);
         checked_int32(count);
-        elements.entity_blocks.reserve(checked_count(elements.entity_blocks,
-            checked_sum(elements.entity_blocks.size(), count)));
+        checked_count(elements.entity_blocks, checked_sum(elements.entity_blocks.size(), count));
         if (elements.entity_blocks.empty()) {
             elements.min_element_tag = std::numeric_limits<std::uint64_t>::max();
             elements.max_element_tag = 0;
@@ -76,18 +74,11 @@ void load_elements(std::istream& in, MshSpec& spec)
             }
             if (block_count <= 0 || nonnegative(block_count) > count - processed)
                 throw InvalidFormat("Inconsistent MSH 2.2 element block count");
-            resize_checked(tags, nonnegative(num_tags));
             const auto n = nodes_per_element(type);
-            resize_checked(node_ids, n);
             for (std::int32_t i = 0; i < block_count; ++i) {
                 if (binary) read_binary(in, &id);
-                if (binary) {
-                    read_binary(in, tags.data(), tags.size());
-                    read_binary(in, node_ids.data(), node_ids.size());
-                } else {
-                    for (auto& tag : tags) read_ascii(in, tag);
-                    for (auto& node : node_ids) read_ascii(in, node);
-                }
+                read_values(in, tags, nonnegative(num_tags), binary);
+                read_values(in, node_ids, n, binary);
                 elements.entity_blocks.emplace_back();
                 auto& block = elements.entity_blocks.back();
                 block.entity_dim = get_element_dim(type);
@@ -95,7 +86,7 @@ void load_elements(std::istream& in, MshSpec& spec)
                 block.entity_tag = tags.size() > 1 ? tags[1] : (tags.empty() ? 1 : tags[0]);
                 if (tags.size() > 1) physical_tags[block.entity_dim][tags[1]].insert(tags[0]);
                 block.num_elements_in_block = 1;
-                resize_checked(block.data, n + 1);
+                block.data.resize(n + 1);
                 block.data[0] = nonnegative(id);
                 for (size_t j = 0; j < n; ++j) block.data[j + 1] = nonnegative(node_ids[j]);
                 elements.min_element_tag = std::min(elements.min_element_tag, block.data[0]);

@@ -37,28 +37,24 @@ void load_entities(std::istream& in, MshSpec& spec)
     read_field(in, surfaces, binary);
     read_field(in, volumes, binary);
     auto& entities = spec.entities;
-    resize_checked(entities.points, points);
-    resize_checked(entities.curves, curves);
-    resize_checked(entities.surfaces, surfaces);
-    resize_checked(entities.volumes, volumes);
-    for (auto& point : entities.points) {
+    read_records(entities.points, points, [&](PointEntity& point) {
         read_field(in, point.tag, binary);
         read_field(in, point.x, binary);
         read_field(in, point.y, binary);
         read_field(in, point.z, binary);
         load_tags(in, point.physical_group_tags, binary);
-    }
-    for (auto& curve : entities.curves) {
+    });
+    read_records(entities.curves, curves, [&](CurveEntity& curve) {
         load_bounded_entity(in, curve, binary);
         load_tags(in, curve.boundary_point_tags, binary);
-    }
-    for (auto& surface : entities.surfaces) {
+    });
+    read_records(entities.surfaces, surfaces, [&](SurfaceEntity& surface) {
         load_bounded_entity(in, surface, binary);
         load_tags(in, surface.boundary_curve_tags, binary);
-    }
-    for (auto& volume : entities.volumes) {
+    });
+    read_records(entities.volumes, volumes, [&](VolumeEntity& volume) {
         load_bounded_entity(in, volume, binary);
         load_tags(in, volume.boundary_surface_tags, binary);
-    }
+    });
 }
 } // namespace mshio

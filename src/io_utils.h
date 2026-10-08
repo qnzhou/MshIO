@@ -1,6 +1,7 @@
 #pragma once
 
 #include <mshio/exception.h>
+#include <algorithm>
 #include <cctype>
 #include <cstdint>
 #include <istream>
@@ -52,10 +53,30 @@ size_t checked_count(const std::vector<T>& values, std::uint64_t count)
     return n;
 }
 
+// Counts read from a file are untrusted: a few bytes can declare billions of entries.
+// Containers therefore never reserve more than this ahead of the data actually read, and
+// grow geometrically (at most doubling) toward the declared count as input arrives.
+constexpr size_t max_speculative_bytes = size_t(1) << 20;
+
 template <typename T>
-void resize_checked(std::vector<T>& values, std::uint64_t count)
+void reserve_next(std::vector<T>& values, size_t total, size_t needed = 1)
 {
-    values.resize(checked_count(values, count));
+    if (values.capacity() - values.size() >= needed) return;
+    const auto ahead = std::max(values.size(), std::max<size_t>(1, max_speculative_bytes / sizeof(T)));
+    values.reserve(values.size() + std::max(needed, std::min(total - values.size(), ahead)));
+}
+
+// Replaces `values` with `count` records, each default-constructed and then filled by `read`.
+template <typename T, typename Read>
+void read_records(std::vector<T>& values, std::uint64_t count, Read&& read)
+{
+    const auto n = checked_count(values, count);
+    values.clear();
+    while (values.size() < n) {
+        reserve_next(values, n);
+        values.emplace_back();
+        read(values.back());
+    }
 }
 
 inline std::uint64_t nonnegative(std::int32_t value)
@@ -137,9 +158,23 @@ void read_field(std::istream& in, T& value, bool binary)
 template <typename T>
 void read_values(std::istream& in, std::vector<T>& values, std::uint64_t count, bool binary)
 {
-    resize_checked(values, count);
-    if (binary) read_binary(in, values.data(), values.size());
-    else for (auto& value : values) read_ascii(in, value);
+    const auto n = checked_count(values, count);
+    values.clear();
+    while (values.size() < n) {
+        reserve_next(values, n);
+        const auto offset = values.size();
+        const auto end = std::min(values.capacity(), n);
+        if (binary) {
+            values.resize(end);
+            read_binary(in, values.data() + offset, end - offset);
+        } else {
+            for (size_t i = offset; i < end; ++i) {
+                T value;
+                read_ascii(in, value);
+                values.push_back(value);
+            }
+        }
+    }
 }
 
 inline size_t node_stride(std::int32_t dim, std::int32_t parametric)

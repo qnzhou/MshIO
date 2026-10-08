@@ -38,6 +38,16 @@ spec = mshio.load_msh("input.msh")
 mshio.save_msh("output.msh", spec)
 ```
 
+In Python, list-valued fields holding MshIO objects (`entity_blocks`, `entries`,
+entity lists, `physical_groups` and the data lists) return copies. Modify an
+element and assign the whole list back:
+
+```python
+blocks = spec.nodes.entity_blocks
+blocks[0].entity_tag = 2
+spec.nodes.entity_blocks = blocks
+```
+
 ## `MshSpec` data structure
 
 `MshSpec` ([code](include/mshio/MshSpec.h)) is a data structure
@@ -65,8 +75,10 @@ The follow sections are supported by MSH format, but not yet supported by MshIO
 
 All fields will be populated by `mshio::load_msh()` method, and all fields
 should be set up correctly before calling `mshio::save_msh()` method. The helper
-method `mshio::validate_spec(spec)` can be used to check if a given `spec` is
-valid.
+method `mshio::validate_spec(spec)` checks that counts and data sizes are
+consistent, node and element tags are unique, and every element references an
+existing node. `load_msh()` does not perform these checks; call `validate_spec()`
+before relying on tags from untrusted files.
 
 ### Portability and public integer types
 
@@ -94,9 +106,11 @@ Container sizes and indices remain host `size_t`. Sparse mesh identifiers above
 `UINT32_MAX` do not require correspondingly large allocations.
 
 Loading checks file counts against host allocation and container limits, and
-checks stride and byte-size products before allocation or binary IO. Malformed,
-truncated, or unrepresentable input fails with exceptions in Release as well as
-Debug builds. A mesh must still fit the host's available memory.
+checks stride and byte-size products before allocation or binary IO. Declared
+counts are not trusted for allocation: containers grow as data is actually read,
+so memory use is proportional to the input size. Malformed, truncated, or
+unrepresentable input fails with exceptions in Release as well as Debug builds.
+A mesh must still fit the host's available memory.
 
 
 ### Mesh format

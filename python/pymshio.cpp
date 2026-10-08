@@ -7,6 +7,10 @@
 
 namespace nb = nanobind;
 
+// Lists of bound classes are returned as copies. A reference into std::vector storage would
+// dangle once the vector is reassigned, so update these fields by assigning a whole list.
+constexpr auto copy_list = nb::rv_policy::copy;
+
 NB_MODULE(pymshio, m)
 {
     nb::class_<mshio::MeshFormat>(m, "MeshFormat")
@@ -42,7 +46,7 @@ NB_MODULE(pymshio, m)
         .def_rw("num_nodes", &mshio::Nodes::num_nodes)
         .def_rw("min_node_tag", &mshio::Nodes::min_node_tag)
         .def_rw("max_node_tag", &mshio::Nodes::max_node_tag)
-        .def_rw("entity_blocks", &mshio::Nodes::entity_blocks)
+        .def_rw("entity_blocks", &mshio::Nodes::entity_blocks, copy_list)
         .def("__repr__", [](const mshio::Nodes& self) {
             return "Nodes(num_entity_blocks=" + std::to_string(self.num_entity_blocks) +
                    ", num_nodes=" + std::to_string(self.num_nodes) +
@@ -70,7 +74,7 @@ NB_MODULE(pymshio, m)
         .def_rw("num_elements", &mshio::Elements::num_elements)
         .def_rw("min_element_tag", &mshio::Elements::min_element_tag)
         .def_rw("max_element_tag", &mshio::Elements::max_element_tag)
-        .def_rw("entity_blocks", &mshio::Elements::entity_blocks)
+        .def_rw("entity_blocks", &mshio::Elements::entity_blocks, copy_list)
         .def("__repr__", [](const mshio::Elements& self) {
             return "Elements(num_entity_blocks=" + std::to_string(self.num_entity_blocks) +
                    ", num_elements=" + std::to_string(self.num_elements) +
@@ -103,7 +107,7 @@ NB_MODULE(pymshio, m)
     nb::class_<mshio::Data>(m, "Data")
         .def(nb::init<>())
         .def_rw("header", &mshio::Data::header)
-        .def_rw("entries", &mshio::Data::entries)
+        .def_rw("entries", &mshio::Data::entries, copy_list)
         .def("__repr__", [](const mshio::Data& self) {
             auto py_header = nb::cast(self.header);
             auto py_entries = nb::cast(self.entries);
@@ -197,10 +201,10 @@ NB_MODULE(pymshio, m)
     nb::class_<mshio::Entities>(m, "Entities")
         .def(nb::init<>())
         .def("empty", &mshio::Entities::empty)
-        .def_rw("points", &mshio::Entities::points)
-        .def_rw("curves", &mshio::Entities::curves)
-        .def_rw("surfaces", &mshio::Entities::surfaces)
-        .def_rw("volumes", &mshio::Entities::volumes)
+        .def_rw("points", &mshio::Entities::points, copy_list)
+        .def_rw("curves", &mshio::Entities::curves, copy_list)
+        .def_rw("surfaces", &mshio::Entities::surfaces, copy_list)
+        .def_rw("volumes", &mshio::Entities::volumes, copy_list)
         .def("__repr__", [](const mshio::Entities& self) {
             return "Entities(points=" + std::to_string(self.points.size()) +
                    ", curves=" + std::to_string(self.curves.size()) +
@@ -224,10 +228,10 @@ NB_MODULE(pymshio, m)
         .def_rw("nodes", &mshio::MshSpec::nodes)
         .def_rw("elements", &mshio::MshSpec::elements)
         .def_rw("entities", &mshio::MshSpec::entities)
-        .def_rw("physical_groups", &mshio::MshSpec::physical_groups)
-        .def_rw("node_data", &mshio::MshSpec::node_data)
-        .def_rw("element_data", &mshio::MshSpec::element_data)
-        .def_rw("element_node_data", &mshio::MshSpec::element_node_data)
+        .def_rw("physical_groups", &mshio::MshSpec::physical_groups, copy_list)
+        .def_rw("node_data", &mshio::MshSpec::node_data, copy_list)
+        .def_rw("element_data", &mshio::MshSpec::element_data, copy_list)
+        .def_rw("element_node_data", &mshio::MshSpec::element_node_data, copy_list)
         .def("__repr__", [](const mshio::MshSpec& self) {
             auto py_mesh_format = nb::cast(self.mesh_format);
             auto py_nodes = nb::cast(self.nodes);

@@ -8,8 +8,7 @@ void load_curves(std::istream& in, MshSpec& spec)
     const bool binary = spec.mesh_format.file_type == 1;
     std::uint64_t count;
     read_ascii(in, count);
-    resize_checked(spec.curves, count);
-    for (auto& curve : spec.curves) {
+    read_records(spec.curves, count, [&](Curve& curve) {
         read_ascii(in, curve.curve_tag);
         read_ascii(in, curve.curve_type);
         read_ascii(in, curve.curve_degree);
@@ -20,7 +19,7 @@ void load_curves(std::istream& in, MshSpec& spec)
             curve.with_weights > 0 ? 4 : 3), curve.num_knots);
         if (binary) eat_white_space(in, 1);
         read_values(in, curve.data, entries, binary);
-    }
+    });
 #else
     (void)in;
     (void)spec;

@@ -8,7 +8,7 @@ include(CPM)
 CPMAddPackage(
     NAME nanobind
     GITHUB_REPOSITORY wjakob/nanobind
-    GIT_TAG v2.9.2
+    GIT_TAG v3.1.0
     DOWNLOAD_ONLY ON
 )
 

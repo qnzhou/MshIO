@@ -16,10 +16,9 @@ void load_data_header(std::istream& in, DataHeader& header)
 {
     std::int32_t count;
     read_ascii(in, count);
-    resize_checked(header.string_tags, nonnegative(count));
-    for (auto& tag : header.string_tags) {
+    read_records(header.string_tags, nonnegative(count), [&](std::string& tag) {
         if (!(in >> std::quoted(tag))) throw InvalidFormat("Truncated MSH string tag");
-    }
+    });
     read_ascii(in, count);
     read_values(in, header.real_tags, nonnegative(count), false);
     read_ascii(in, count);
@@ -38,9 +37,8 @@ void load_data(std::istream& in,
     if (data.header.int_tags.size() < 3)
         throw InvalidFormat("Data requires at least 3 int tags.");
     const auto fields = nonnegative(data.header.int_tags[1]);
-    resize_checked(data.entries, nonnegative(data.header.int_tags[2]));
     if (is_binary) eat_white_space(in, 1);
-    for (auto& entry : data.entries) {
+    read_records(data.entries, nonnegative(data.header.int_tags[2]), [&](DataEntry& entry) {
         read_field(in, entry.tag, is_binary);
         std::uint64_t nodes = 1;
         if (is_element_node_data) {
@@ -48,7 +46,7 @@ void load_data(std::istream& in,
             nodes = nonnegative(entry.num_nodes_per_element);
         }
         read_values(in, entry.data, checked_product(fields, nodes), is_binary);
-    }
+    });
 }
 
 } // namespace internal

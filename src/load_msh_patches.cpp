@@ -8,8 +8,7 @@ void load_patches(std::istream& in, MshSpec& spec)
     const bool binary = spec.mesh_format.file_type == 1;
     std::uint64_t count;
     read_ascii(in, count);
-    resize_checked(spec.patches, count);
-    for (auto& patch : spec.patches) {
+    read_records(spec.patches, count, [&](Patch& patch) {
         read_ascii(in, patch.patch_tag);
         read_ascii(in, patch.patch_type);
         read_ascii(in, patch.degree_u);
@@ -22,7 +21,7 @@ void load_patches(std::istream& in, MshSpec& spec)
             patch.with_weights > 0 ? 4 : 3), checked_sum(patch.num_u_knots, patch.num_v_knots));
         if (binary) eat_white_space(in, 1);
         read_values(in, patch.data, entries, binary);
-    }
+    });
 #else
     (void)in;
     (void)spec;

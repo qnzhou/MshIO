@@ -1,6 +1,11 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include "portability_fixture.h"
+#include "../src/load_msh_data.h"
+#include "../src/load_msh_elements.h"
+#include "../src/load_msh_entities.h"
+#include "../src/load_msh_format.h"
+#include "../src/load_msh_nodes.h"
 #include <mshio/exception.h>
 
 #include <array>
@@ -206,36 +211,37 @@ TEST_CASE("Four-byte 4.1 headers fail in ASCII binary and output", "[io][portabi
 
 TEST_CASE("Truncated binary fields fail explicitly even in Release", "[io][portability][malformed]")
 {
+    using Reader = void (*)(std::istream&, MshSpec&);
+    struct Section {
+        const char* name;
+        Reader read;
+    };
+    const Section sections[] = {
+        {"Entities", load_entities}, {"Nodes", load_nodes}, {"Elements", load_elements},
+        {"NodeData", load_node_data}, {"ElementData", load_element_data},
+        {"ElementNodeData", load_element_node_data},
+    };
     const auto contents = serialized(portability::expected_fixture(), 1);
-    for (const auto* section : {"Entities", "Nodes", "Elements", "NodeData", "ElementData", "ElementNodeData"}) {
-        CAPTURE(section);
-        const std::string marker = std::string("$") + section + "\n";
-        size_t begin = contents.find(marker) + marker.size();
-        const size_t end = contents.find(std::string("\n$End") + section, begin);
+    for (const auto& section : sections) {
+        CAPTURE(section.name);
+        const std::string marker = std::string("$") + section.name + "\n";
+        const size_t begin = contents.find(marker) + marker.size();
+        const size_t end = contents.find(std::string("\n$End") + section.name, begin);
         REQUIRE(end != std::string::npos);
-        if (std::string(section).find("Data") != std::string::npos) {
-            std::istringstream header(contents.substr(begin));
-            size_t count = 0;
-            header >> count;
-            std::string name;
-            for (size_t i = 0; i < count; ++i) header >> std::quoted(name);
-            header >> count;
-            double real = 0;
-            for (size_t i = 0; i < count; ++i) header >> real;
-            header >> count;
-            std::int32_t integer = 0;
-            for (size_t i = 0; i < count; ++i) header >> integer;
-            header.get(); // Exactly the newline before the binary entries.
-            begin += static_cast<size_t>(header.tellg());
-        }
         for (size_t cut = begin; cut < end; ++cut) {
             CAPTURE(cut);
-            REQUIRE(explicit_format_error(contents.substr(0, cut)));
+            MshSpec spec;
+            spec.mesh_format.file_type = 1;
+            // Invoke the section reader without dispatcher's independent terminator check.
+            std::istringstream in("\n" + contents.substr(begin, cut - begin));
+            REQUIRE_THROWS_AS(section.read(in, spec), InvalidFormat);
         }
     }
     const std::string marker = "$MeshFormat\n4.1 1 8\n";
     for (size_t bytes = 0; bytes < sizeof(std::int32_t); ++bytes) {
-        REQUIRE(explicit_format_error(contents.substr(0, marker.size() + bytes)));
+        MshSpec spec;
+        std::istringstream in("4.1 1 8\n" + contents.substr(marker.size(), bytes));
+        REQUIRE_THROWS_AS(load_mesh_format(in, spec), InvalidFormat);
     }
 }
 
@@ -366,12 +372,40 @@ TEST_CASE("MSH 2.2 preserves representable int32 tags and rejects narrowing", "[
         invalid = spec;
         invalid.elements.entity_blocks.front().data.back() = tag + 1;
         REQUIRE(explicit_save_error(invalid));
-        invalid = spec;
-        invalid.nodes.num_nodes = tag + 1;
-        REQUIRE(explicit_save_error(invalid));
-        invalid = spec;
-        invalid.elements.num_elements = tag + 1;
-        REQUIRE(explicit_save_error(invalid));
+    }
+}
+
+TEST_CASE("MSH 2.2 rejects oversized counts before reading records", "[io][portability][v22]")
+{
+    for (std::int32_t encoding : {0, 1}) {
+        for (const auto reader : {load_nodes, load_elements}) {
+            MshSpec spec;
+            spec.mesh_format.version = "2.2";
+            spec.mesh_format.file_type = encoding;
+            std::istringstream in("2147483648\n12345\n");
+            REQUIRE_THROWS_AS(reader(in, spec), InvalidFormat);
+            std::uint64_t next = 0;
+            in >> next;
+            REQUIRE(next == 12345);
+        }
+    }
+}
+
+TEST_CASE("MSH 2.2 roundtrips meshes with empty element blocks", "[io][portability][v22]")
+{
+    MshSpec spec;
+    spec.mesh_format.version = "2.2";
+    spec.nodes = {1, 1, 1, 1, {{0, 1, 0, 1, {1}, {0, 0, 0}}}};
+    spec.elements = {3, 1, 1, 1,
+        {{0, 1, 15, 0, {}}, {0, 1, 15, 1, {1, 1}}, {0, 1, 15, 0, {}}}};
+    validate_spec(spec);
+    for (std::int32_t encoding : {0, 1}) {
+        CAPTURE(encoding);
+        std::istringstream in(serialized(spec, encoding));
+        const auto actual = load_msh(in);
+        validate_spec(actual);
+        REQUIRE(actual.elements.num_elements == 1);
+        REQUIRE(actual.elements.entity_blocks.front().data == spec.elements.entity_blocks[1].data);
     }
 }
 

@@ -67,7 +67,7 @@ class BindingOwnershipTests(unittest.TestCase):
         self.assertEqual(block.data.shape, (0,))
         del block
         gc.collect()
-        np.testing.assert_array_equal(tags, [10, 2**63 + 7, 2**64 - 1])
+        np.testing.assert_array_equal(tags, np.array([10, 2**63 + 7, 2**64 - 1], dtype=np.uint64))
         np.testing.assert_array_equal(coordinates, [10.25, 1.25, 2.25])
 
     def test_array_setters_accept_checked_sequences_and_strides(self):
@@ -85,7 +85,34 @@ class BindingOwnershipTests(unittest.TestCase):
         block.tags = np.array([1, 2, 3], dtype=np.int64)
         np.testing.assert_array_equal(block.tags, [1, 2, 3])
         block.tags = np.array([0, 2**63, 2**64 - 1], dtype=np.uint64)
-        np.testing.assert_array_equal(block.tags, [0, 2**63, 2**64 - 1])
+        np.testing.assert_array_equal(block.tags, np.array([0, 2**63, 2**64 - 1], dtype=np.uint64))
+
+    def test_unaligned_and_non_native_arrays_preserve_values(self):
+        block = mshio.NodeBlock()
+        expected_tags = np.array([2**63 + 7, 2**64 - 1], dtype=np.uint64)
+        tags = np.ndarray((2,), dtype=np.uint64, buffer=bytearray(17), offset=1)
+        tags[:] = expected_tags
+        block.tags = tags
+        tags[0] = 1
+        np.testing.assert_array_equal(block.tags, expected_tags)
+
+        coordinates = np.ndarray((2,), dtype=np.float64, buffer=bytearray(17), offset=1)
+        coordinates[:] = [0.5, 1.5]
+        block.data = coordinates
+        np.testing.assert_array_equal(block.data, [0.5, 1.5])
+        other_endian = ">" if np.little_endian else "<"
+        block.tags = expected_tags.astype(other_endian + "u8")
+        np.testing.assert_array_equal(block.tags, expected_tags)
+        block.data = np.array([0.5, 1.5], dtype=other_endian + "f8")
+        np.testing.assert_array_equal(block.data, [0.5, 1.5])
+
+    def test_object_arrays_use_checked_scalar_conversion(self):
+        block = mshio.NodeBlock()
+        expected_tags = np.array([1, 2**63 + 7, 2**64 - 1], dtype=np.uint64)
+        block.tags = np.array([1, 2**63 + 7, 2**64 - 1], dtype=object)
+        np.testing.assert_array_equal(block.tags, expected_tags)
+        block.data = np.array([0.5, 1.5], dtype=object)
+        np.testing.assert_array_equal(block.data, [0.5, 1.5])
 
     def test_rejected_array_shapes_and_integer_values_preserve_storage(self):
         block = mshio.NodeBlock()
@@ -105,7 +132,11 @@ class BindingOwnershipTests(unittest.TestCase):
                 np.testing.assert_array_equal(block.tags, [7, 8])
 
         block.data = [0.5, 1.5]
-        for source in (np.array(1.0), np.ones((2, 2)), np.empty((0, 2))):
+        for source in (
+            np.array(1.0), np.ones((2, 2)), np.empty((0, 2)),
+            np.array(1.0, dtype=object), np.ones((2, 2), dtype=object),
+            np.empty((0, 2), dtype=object),
+        ):
             with self.subTest(shape=source.shape):
                 with self.assertRaises(TypeError):
                     block.data = source

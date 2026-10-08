@@ -7,6 +7,10 @@
 #include <nanobind/stl/string.h>
 #include <nanobind/stl/vector.h>
 
+#include <cstdint>
+#include <cstring>
+#include <memory>
+
 namespace nb = nanobind;
 
 NB_MAKE_OPAQUE(std::vector<mshio::NodeBlock>);
@@ -27,9 +31,20 @@ void def_array(nb::class_<Class>& binding, const char* name,
 {
     binding.def_prop_rw(name,
         [member](Class& self) {
-            auto& values = self.*member;
-            return nb::ndarray<nb::numpy, Scalar, nb::ndim<1>>(
-                values.data(), {values.size()});
+            using Snapshot = nb::ndarray<nb::numpy, Scalar, nb::ndim<1>>;
+            const auto& values = self.*member;
+            const auto count = values.size();
+            if (values.empty()) return Snapshot(nullptr, {0});
+
+            // Copy while the GIL protects the source, before calling into NumPy.
+            std::unique_ptr<Scalar[]> storage(new Scalar[count]);
+            std::memcpy(storage.get(), values.data(), count * sizeof(Scalar));
+            auto* data = storage.get();
+            nb::capsule owner(data, [](void* pointer) noexcept {
+                delete[] static_cast<Scalar*>(pointer);
+            });
+            storage.release();
+            return Snapshot(data, {count}, owner);
         },
         [member](Class& self, nb::handle source) {
             using Array = nb::ndarray<const Scalar, nb::ndim<1>, nb::c_contig,
@@ -37,7 +52,8 @@ void def_array(nb::class_<Class>& binding, const char* name,
             Array array;
             auto& values = self.*member;
             // Disable implicit ndarray casts: integer narrowing must be checked elementwise.
-            if (nb::try_cast(source, array, false)) {
+            if (nb::try_cast(source, array, false) &&
+                reinterpret_cast<std::uintptr_t>(array.data()) % alignof(Scalar) == 0) {
                 if (array.size() == 0) {
                     values.clear();
                 } else {
@@ -45,14 +61,19 @@ void def_array(nb::class_<Class>& binding, const char* name,
                 }
             } else {
                 if (nb::ndarray_check(source)) {
-                    auto input = nb::cast<nb::ndarray<nb::ro, nb::device::cpu>>(source, false);
-                    if (input.ndim() != 1) {
-                        throw nb::type_error("Expected a one-dimensional numeric array");
+                    nb::ndarray<nb::ro, nb::ndim<1>, nb::device::cpu> input;
+                    if (!nb::try_cast(source, input, false)) {
+                        // NumPy object and non-native-endian arrays have no DLPack dtype.
+                        nb::object numpy_array = nb::module_::import_("numpy").attr("ndarray");
+                        if (!nb::isinstance(source, numpy_array) ||
+                            nb::cast<size_t>(source.attr("ndim")) != 1) {
+                            throw nb::type_error("Expected a one-dimensional CPU numeric array");
+                        }
                     }
                 }
                 values = nb::cast<std::vector<Scalar>>(source);
             }
-        }, nb::rv_policy::copy, doc);
+        }, nb::rv_policy::reference, doc);
 }
 
 } // namespace

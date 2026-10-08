@@ -30,7 +30,7 @@ mshio::MshSpec spec = mshio::load_msh("input.msh");
 mshio::save_msh("output.msh", spec);
 ```
 
-or in Python
+or in Python (requires Python 3.10 or newer)
 ```python
 import mshio
 
@@ -68,12 +68,14 @@ Large numeric fields return fresh, flat, writable NumPy snapshots:
 | `NodeBlock.data`, `DataEntry.data` | `float64` |
 
 Editing a snapshot does not change the mesh until it is assigned back. Snapshots
-remain valid after replacing their source field or destroying the mesh. Setters
-accept one-dimensional CPU arrays and Python sequences: matching contiguous
-arrays are copied directly, while other supported inputs use checked scalar
-conversion. Integer identifiers are not silently narrowed or wrapped. Small
-metadata vectors (header tags, physical-group tags, and boundary tags) retain
-their Python-list copy semantics.
+are copied under the GIL into independently owned buffers before NumPy sees
+them, and remain valid after replacing their source field or destroying the
+mesh. Setters accept one-dimensional CPU arrays and Python sequences: matching,
+aligned contiguous arrays are copied directly, while unaligned, object-dtype,
+non-native-endian, and other supported inputs use checked scalar conversion.
+Integer identifiers are not silently narrowed or wrapped. Small metadata
+vectors (header tags, physical-group tags, and boundary tags) retain their
+Python-list copy semantics.
 
 Nested object collections also require assignment back at each item boundary:
 
@@ -148,9 +150,13 @@ Container sizes and indices remain host `size_t`. Sparse mesh identifiers above
 Loading checks file counts against host allocation and container limits, and
 checks stride and byte-size products before allocation or binary IO. Declared
 counts are not trusted for allocation: containers grow as data is actually read,
-so memory use is proportional to the input size. Malformed, truncated, or
-unrepresentable input fails with exceptions in Release as well as Debug builds.
-A mesh must still fit the host's available memory.
+so memory use is proportional to the input size. Out-of-range fields,
+inconsistent section counts, overflowing allocation/stride products, and
+truncated supported-section payloads raise exceptions in Release as well as
+Debug builds. This is not complete file-format validation: empty/headerless
+inputs can produce an empty spec, and `validate_spec()` checks mesh data
+invariants rather than required-header presence. A mesh must still fit the
+host's available memory.
 
 
 ### Mesh format

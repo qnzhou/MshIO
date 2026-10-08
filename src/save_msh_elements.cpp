@@ -39,6 +39,7 @@ void save_elements(std::ostream& out, const MshSpec& spec)
             << elements.min_element_tag << ' ' << elements.max_element_tag << '\n';
     } else out << elements.num_elements << '\n';
     for (const auto& block : elements.entity_blocks) {
+        if (!v41 && binary && block.num_elements_in_block == 0) continue;
         const auto stride = nodes_per_element(block.element_type) + 1;
         if (v41 && binary) {
             write_binary(out, &block.entity_dim);

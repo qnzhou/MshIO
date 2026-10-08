@@ -60,12 +60,18 @@ if (MSHIO_BUILD_TESTS)
     include(Catch2)
     include(sanitizer-cmake)
 
-    file(GLOB TEST_FILES "${PROJECT_SOURCE_DIR}/tests/*.cpp")
+    file(GLOB TEST_FILES "${PROJECT_SOURCE_DIR}/tests/test_*.cpp")
     add_executable(test_MshIO ${TEST_FILES})
     target_link_libraries(test_MshIO mshio::mshio Catch2::Catch2WithMain)
     target_compile_definitions(test_MshIO PRIVATE
         MSHIO_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
     set_property(TARGET test_MshIO PROPERTY POSITION_INDEPENDENT_CODE ON)
+
+    add_executable(mshio_fixture_export "${PROJECT_SOURCE_DIR}/tests/fixture_export.cpp")
+    target_link_libraries(mshio_fixture_export PRIVATE mshio::mshio)
+    target_compile_definitions(mshio_fixture_export PRIVATE
+        MSHIO_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
+
     catch_discover_tests(test_MshIO)
 
     if(NOT MSVC)

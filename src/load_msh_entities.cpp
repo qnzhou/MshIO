@@ -1,247 +1,64 @@
+#include "load_msh_entities.h"
 #include "io_utils.h"
-
 #include <mshio/MshSpec.h>
-#include <mshio/exception.h>
-
-#include <cassert>
-#include <fstream>
 
 namespace mshio {
-
-namespace v41 {
-
-void load_entities_ascii(std::istream& in, MshSpec& spec)
+namespace {
+void load_tags(std::istream& in, std::vector<std::int32_t>& tags, bool binary)
 {
-    size_t num_points, num_curves, num_surfaces, num_volumes;
-    in >> num_points;
-    in >> num_curves;
-    in >> num_surfaces;
-    in >> num_volumes;
-    assert(in.good());
-
-    Entities& entities = spec.entities;
-    entities.points.resize(num_points);
-    entities.curves.resize(num_curves);
-    entities.surfaces.resize(num_surfaces);
-    entities.volumes.resize(num_volumes);
-
-    for (size_t i = 0; i < num_points; i++) {
-        PointEntity& point = entities.points[i];
-        in >> point.tag;
-        in >> point.x;
-        in >> point.y;
-        in >> point.z;
-        size_t num_physical_groups;
-        in >> num_physical_groups;
-        point.physical_group_tags.resize(num_physical_groups);
-        for (size_t j = 0; j < num_physical_groups; j++) {
-            in >> point.physical_group_tags[j];
-        }
-    }
-
-    for (size_t i = 0; i < num_curves; i++) {
-        CurveEntity& curve = entities.curves[i];
-        in >> curve.tag;
-        in >> curve.min_x;
-        in >> curve.min_y;
-        in >> curve.min_z;
-        in >> curve.max_x;
-        in >> curve.max_y;
-        in >> curve.max_z;
-        size_t num_physical_groups;
-        in >> num_physical_groups;
-        curve.physical_group_tags.resize(num_physical_groups);
-        for (size_t j = 0; j < num_physical_groups; j++) {
-            in >> curve.physical_group_tags[j];
-        }
-        size_t num_boundary_points;
-        in >> num_boundary_points;
-        curve.boundary_point_tags.resize(num_boundary_points);
-        for (size_t j = 0; j < num_boundary_points; j++) {
-            in >> curve.boundary_point_tags[j];
-        }
-    }
-
-    for (size_t i = 0; i < num_surfaces; i++) {
-        SurfaceEntity& surface = entities.surfaces[i];
-        in >> surface.tag;
-        in >> surface.min_x;
-        in >> surface.min_y;
-        in >> surface.min_z;
-        in >> surface.max_x;
-        in >> surface.max_y;
-        in >> surface.max_z;
-        size_t num_physical_groups;
-        in >> num_physical_groups;
-        surface.physical_group_tags.resize(num_physical_groups);
-        for (size_t j = 0; j < num_physical_groups; j++) {
-            in >> surface.physical_group_tags[j];
-        }
-        size_t num_boundary_curves;
-        in >> num_boundary_curves;
-        surface.boundary_curve_tags.resize(num_boundary_curves);
-        for (size_t j = 0; j < num_boundary_curves; j++) {
-            in >> surface.boundary_curve_tags[j];
-        }
-    }
-
-    for (size_t i = 0; i < num_volumes; i++) {
-        VolumeEntity& volume = entities.volumes[i];
-        in >> volume.tag;
-        in >> volume.min_x;
-        in >> volume.min_y;
-        in >> volume.min_z;
-        in >> volume.max_x;
-        in >> volume.max_y;
-        in >> volume.max_z;
-        size_t num_physical_groups;
-        in >> num_physical_groups;
-        volume.physical_group_tags.resize(num_physical_groups);
-        for (size_t j = 0; j < num_physical_groups; j++) {
-            in >> volume.physical_group_tags[j];
-        }
-        size_t num_boundary_surfaces;
-        in >> num_boundary_surfaces;
-        volume.boundary_surface_tags.resize(num_boundary_surfaces);
-        for (size_t j = 0; j < num_boundary_surfaces; j++) {
-            in >> volume.boundary_surface_tags[j];
-        }
-    }
-
-    assert(in.good());
+    std::uint64_t count;
+    read_field(in, count, binary);
+    read_values(in, tags, count, binary);
 }
 
-void load_entities_binary(std::istream& in, MshSpec& spec)
+template <typename Entity>
+void load_bounded_entity(std::istream& in, Entity& entity, bool binary)
 {
-    eat_white_space(in, 1);
-    size_t num_points, num_curves, num_surfaces, num_volumes;
-    in.read(reinterpret_cast<char*>(&num_points), sizeof(size_t));
-    in.read(reinterpret_cast<char*>(&num_curves), sizeof(size_t));
-    in.read(reinterpret_cast<char*>(&num_surfaces), sizeof(size_t));
-    in.read(reinterpret_cast<char*>(&num_volumes), sizeof(size_t));
-    assert(in.good());
-
-    Entities& entities = spec.entities;
-    entities.points.resize(num_points);
-    entities.curves.resize(num_curves);
-    entities.surfaces.resize(num_surfaces);
-    entities.volumes.resize(num_volumes);
-
-    for (size_t i = 0; i < num_points; i++) {
-        PointEntity& point = entities.points[i];
-        in.read(reinterpret_cast<char*>(&point.tag), sizeof(int));
-        in.read(reinterpret_cast<char*>(&point.x), sizeof(double));
-        in.read(reinterpret_cast<char*>(&point.y), sizeof(double));
-        in.read(reinterpret_cast<char*>(&point.z), sizeof(double));
-        size_t num_physical_groups;
-        in.read(reinterpret_cast<char*>(&num_physical_groups), sizeof(size_t));
-        assert(in.good());
-
-        point.physical_group_tags.resize(num_physical_groups);
-        in.read(reinterpret_cast<char*>(point.physical_group_tags.data()),
-            static_cast<std::streamsize>(sizeof(int) * num_physical_groups));
-        assert(in.good());
-    }
-
-    for (size_t i = 0; i < num_curves; i++) {
-        CurveEntity& curve = entities.curves[i];
-        in.read(reinterpret_cast<char*>(&curve.tag), sizeof(int));
-        in.read(reinterpret_cast<char*>(&curve.min_x), sizeof(double));
-        in.read(reinterpret_cast<char*>(&curve.min_y), sizeof(double));
-        in.read(reinterpret_cast<char*>(&curve.min_z), sizeof(double));
-        in.read(reinterpret_cast<char*>(&curve.max_x), sizeof(double));
-        in.read(reinterpret_cast<char*>(&curve.max_y), sizeof(double));
-        in.read(reinterpret_cast<char*>(&curve.max_z), sizeof(double));
-        size_t num_physical_groups;
-        in.read(reinterpret_cast<char*>(&num_physical_groups), sizeof(size_t));
-        assert(in.good());
-
-        curve.physical_group_tags.resize(num_physical_groups);
-        in.read(reinterpret_cast<char*>(curve.physical_group_tags.data()),
-            static_cast<std::streamsize>(sizeof(int) * num_physical_groups));
-        assert(in.good());
-
-        size_t num_boundary_points;
-        in.read(reinterpret_cast<char*>(&num_boundary_points), sizeof(size_t));
-        assert(in.good());
-
-        curve.boundary_point_tags.resize(num_boundary_points);
-        in.read(reinterpret_cast<char*>(curve.boundary_point_tags.data()),
-            static_cast<std::streamsize>(sizeof(int) * num_boundary_points));
-        assert(in.good());
-    }
-
-    for (size_t i = 0; i < num_surfaces; i++) {
-        SurfaceEntity& surface = entities.surfaces[i];
-        in.read(reinterpret_cast<char*>(&surface.tag), sizeof(int));
-        in.read(reinterpret_cast<char*>(&surface.min_x), sizeof(double));
-        in.read(reinterpret_cast<char*>(&surface.min_y), sizeof(double));
-        in.read(reinterpret_cast<char*>(&surface.min_z), sizeof(double));
-        in.read(reinterpret_cast<char*>(&surface.max_x), sizeof(double));
-        in.read(reinterpret_cast<char*>(&surface.max_y), sizeof(double));
-        in.read(reinterpret_cast<char*>(&surface.max_z), sizeof(double));
-        size_t num_physical_groups;
-        in.read(reinterpret_cast<char*>(&num_physical_groups), sizeof(size_t));
-        assert(in.good());
-
-        surface.physical_group_tags.resize(num_physical_groups);
-        in.read(reinterpret_cast<char*>(surface.physical_group_tags.data()),
-            static_cast<std::streamsize>(sizeof(int) * num_physical_groups));
-        assert(in.good());
-
-        size_t num_boundary_curves;
-        in.read(reinterpret_cast<char*>(&num_boundary_curves), sizeof(size_t));
-        assert(in.good());
-
-        surface.boundary_curve_tags.resize(num_boundary_curves);
-        in.read(reinterpret_cast<char*>(surface.boundary_curve_tags.data()),
-            static_cast<std::streamsize>(sizeof(int) * num_boundary_curves));
-        assert(in.good());
-    }
-
-    for (size_t i = 0; i < num_volumes; i++) {
-        VolumeEntity& volume = entities.volumes[i];
-        in.read(reinterpret_cast<char*>(&volume.tag), sizeof(int));
-        in.read(reinterpret_cast<char*>(&volume.min_x), sizeof(double));
-        in.read(reinterpret_cast<char*>(&volume.min_y), sizeof(double));
-        in.read(reinterpret_cast<char*>(&volume.min_z), sizeof(double));
-        in.read(reinterpret_cast<char*>(&volume.max_x), sizeof(double));
-        in.read(reinterpret_cast<char*>(&volume.max_y), sizeof(double));
-        in.read(reinterpret_cast<char*>(&volume.max_z), sizeof(double));
-        size_t num_physical_groups;
-        in.read(reinterpret_cast<char*>(&num_physical_groups), sizeof(size_t));
-        assert(in.good());
-
-        volume.physical_group_tags.resize(num_physical_groups);
-        in.read(reinterpret_cast<char*>(volume.physical_group_tags.data()),
-            static_cast<std::streamsize>(sizeof(int) * num_physical_groups));
-        assert(in.good());
-
-        size_t num_boundary_surfaces;
-        in.read(reinterpret_cast<char*>(&num_boundary_surfaces), sizeof(size_t));
-        assert(in.good());
-
-        volume.boundary_surface_tags.resize(num_boundary_surfaces);
-        in.read(reinterpret_cast<char*>(volume.boundary_surface_tags.data()),
-            static_cast<std::streamsize>(sizeof(int) * num_boundary_surfaces));
-        assert(in.good());
-    }
+    read_field(in, entity.tag, binary);
+    read_field(in, entity.min_x, binary);
+    read_field(in, entity.min_y, binary);
+    read_field(in, entity.min_z, binary);
+    read_field(in, entity.max_x, binary);
+    read_field(in, entity.max_y, binary);
+    read_field(in, entity.max_z, binary);
+    load_tags(in, entity.physical_group_tags, binary);
 }
-
-} // namespace v41
+}
 
 void load_entities(std::istream& in, MshSpec& spec)
 {
-    const std::string& version = spec.mesh_format.version;
-    const bool is_ascii = spec.mesh_format.file_type == 0;
-    if (version == "4.1") {
-        if (is_ascii)
-            v41::load_entities_ascii(in, spec);
-        else
-            v41::load_entities_binary(in, spec);
-    } else if (version == "2.2") {
-        throw InvalidFormat("$Entities section not supported by MSH version 2.2");
+    if (spec.mesh_format.version != "4.1")
+        throw InvalidFormat("$Entities requires MSH version 4.1");
+    const bool binary = spec.mesh_format.file_type == 1;
+    if (binary) eat_white_space(in, 1);
+    std::uint64_t points, curves, surfaces, volumes;
+    read_field(in, points, binary);
+    read_field(in, curves, binary);
+    read_field(in, surfaces, binary);
+    read_field(in, volumes, binary);
+    auto& entities = spec.entities;
+    resize_checked(entities.points, points);
+    resize_checked(entities.curves, curves);
+    resize_checked(entities.surfaces, surfaces);
+    resize_checked(entities.volumes, volumes);
+    for (auto& point : entities.points) {
+        read_field(in, point.tag, binary);
+        read_field(in, point.x, binary);
+        read_field(in, point.y, binary);
+        read_field(in, point.z, binary);
+        load_tags(in, point.physical_group_tags, binary);
+    }
+    for (auto& curve : entities.curves) {
+        load_bounded_entity(in, curve, binary);
+        load_tags(in, curve.boundary_point_tags, binary);
+    }
+    for (auto& surface : entities.surfaces) {
+        load_bounded_entity(in, surface, binary);
+        load_tags(in, surface.boundary_curve_tags, binary);
+    }
+    for (auto& volume : entities.volumes) {
+        load_bounded_entity(in, volume, binary);
+        load_tags(in, volume.boundary_surface_tags, binary);
     }
 }
-
 } // namespace mshio

@@ -68,6 +68,37 @@ should be set up correctly before calling `mshio::save_msh()` method. The helper
 method `mshio::validate_spec(spec)` can be used to check if a given `spec` is
 valid.
 
+### Portability and public integer types
+
+MSH 4.1 uses an eight-byte format contract independent of the host ABI:
+specification `size_t` fields are `std::uint64_t`, specification `int` fields are
+`std::int32_t`, and coordinates and values are eight-byte `double`s. Both ASCII
+and binary MSH 4.1 files require `MeshFormat::data_size == 8`; four-byte MSH 4.1
+files are not supported. The existing binary endianness policy is unchanged.
+
+Node and element counts, block counts, tag bounds, node tags, element tags, and
+connectivity now use `std::uint64_t` instead of host `size_t`. Entity dimensions,
+entity tags, physical-group tags, signed boundary tags, and element types use
+`std::int32_t`. Post-processing entry tags and integer header tags remain
+32-bit, as required by the current MSH specification; they cannot refer to mesh
+identifiers above `INT32_MAX`. MSH 2.2 retains its separate 32-bit layouts and
+rejects identifiers that cannot be represented when saving.
+
+The optional NanoSpline `Curve` and `Patch` integer fields also use
+`std::uint64_t`; their custom-section headers remain ASCII.
+
+C++ consumers must migrate tag vectors and tag-to-index maps to the fixed-width
+types; resolve identifiers before converting them to local mesh indices. Python
+integers retain the same API but must fit the corresponding fixed-width field.
+Container sizes and indices remain host `size_t`. Sparse mesh identifiers above
+`UINT32_MAX` do not require correspondingly large allocations.
+
+Loading checks file counts against host allocation and container limits, and
+checks stride and byte-size products before allocation or binary IO. Malformed,
+truncated, or unrepresentable input fails with exceptions in Release as well as
+Debug builds. A mesh must still fit the host's available memory.
+
+
 ### Mesh format
 
 Mesh format section is the header of MSH file.  It contains information about
@@ -78,7 +109,7 @@ required.
 auto& format = spec.mesh_format;
 format.version = "4.1";            // Only version "2.2" and "4.1" are supported.
 format.file_type = 1;              // 0: ASCII, 1: binary.
-format.data_size = sizeof(size_t); // Size of data, defined as sizeof(size_t) = 8.
+format.data_size = 8;              // Fixed MSH 4.1 format width.
 ```
 
 ### Nodes
@@ -166,7 +197,7 @@ See all supported element types [here](#Supported-element-types).
 
 #### Element data
 
-The element data is a flattened `std::vector` of `size_t`.  It follows the
+The element data is a flattened `std::vector<std::uint64_t>`. It follows the
 convention below:
 
 ```
@@ -208,8 +239,8 @@ auto& physical_groups = surface_entity->physical_group_tags;
 ### Physical groups
 
 Physical groups are used to tag elements with arbitrary metadata (e.g.
-"boundary", "steel", etc.). Physical groups have an `int` tag, `int` dimension,
-and `string` name. The name may be empty.
+"boundary", "steel", etc.). Physical groups have a `std::int32_t` tag and
+dimension, and a `string` name. The name may be empty.
 
 ```c++
 auto& physical_groups = spec.physical_groups;
@@ -235,8 +266,8 @@ auto& element_node_data = spec.element_node_data[k];
 
 #### Data header
 
-Data header consists of arrays of `string`, `double` and `int` tags.  Some tags
-has pre-defined meaning:
+Data header consists of arrays of `string`, `double` and `std::int32_t` tags.
+Some tags have pre-defined meaning:
 
 ```c++
 auto& header = node_data.header;

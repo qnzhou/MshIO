@@ -1,4 +1,5 @@
 #include <mshio/MshSpec.h>
+#include <mshio/exception.h>
 
 #include "load_msh_curves.h"
 #include "load_msh_data.h"
@@ -21,9 +22,10 @@ namespace mshio {
 void forward_to(std::istream& in, const std::string& flag)
 {
     std::string buf;
-    while (!in.eof() && buf != flag) {
-        in >> buf;
+    while (in >> buf) {
+        if (buf == flag) return;
     }
+    throw InvalidFormat("Missing or truncated MSH section terminator: " + flag);
 }
 
 MshSpec load_msh(std::istream& in)
@@ -31,9 +33,7 @@ MshSpec load_msh(std::istream& in)
     MshSpec spec;
     std::string buf, end_str;
 
-    while (!in.eof()) {
-        buf.clear();
-        in >> buf;
+    while (in >> buf) {
         if (buf.size() == 0 || buf[0] != '$') continue;
         end_str = "$End" + buf.substr(1);
         if (buf == "$MeshFormat") {

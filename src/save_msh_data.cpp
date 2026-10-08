@@ -1,9 +1,9 @@
 #include "save_msh_data.h"
+#include "io_utils.h"
 
 #include <mshio/MshSpec.h>
 #include <mshio/exception.h>
 
-#include <cassert>
 #include <iomanip>
 #include <ostream>
 #include <string>
@@ -18,70 +18,42 @@ void save_data(std::ostream& out,
     bool is_binary,
     bool is_element_node_data)
 {
-    out << data.header.string_tags.size() << std::endl;
-    for (const std::string& tag : data.header.string_tags) {
-        out << std::quoted(tag) << std::endl;
+    if (version != "4.1" && version != "2.2")
+        throw InvalidFormat("Unsupported version " + version);
+    checked_int32(data.header.string_tags.size());
+    checked_int32(data.header.real_tags.size());
+    checked_int32(data.header.int_tags.size());
+    if (data.header.int_tags.size() < 3)
+        throw InvalidFormat("Data requires at least 3 int tags.");
+    const auto fields = nonnegative(data.header.int_tags[1]);
+    if (nonnegative(data.header.int_tags[2]) != data.entries.size())
+        throw InvalidFormat("Inconsistent MSH data entry count");
+    for (const auto& entry : data.entries) {
+        const auto nodes = is_element_node_data ? nonnegative(entry.num_nodes_per_element) : 1;
+        if (entry.data.size() != checked_product(fields, nodes))
+            throw InvalidFormat("Inconsistent MSH data entry size");
+        checked_bytes(entry.data.size(), sizeof(double));
     }
-
-    out << data.header.real_tags.size() << std::endl;
-    for (const double& tag : data.header.real_tags) {
-        out << tag << std::endl;
-    }
-
-    out << data.header.int_tags.size() << std::endl;
-    for (const int& tag : data.header.int_tags) {
-        out << tag << std::endl;
-    }
-
-    if (is_binary) {
-        if (version == "4.1") {
-            int32_t tag;
-            for (const DataEntry& entry : data.entries) {
-                // TODO:
-                // Based on trial and error, it seems Gmsh 4.7.1 still expect 32
-                // bits tag, which is inconsistent with their spec.  Maybe
-                // report a bug?
-                tag = static_cast<int32_t>(entry.tag);
-                out.write(reinterpret_cast<const char*>(&tag), 4);
-                // out.write(reinterpret_cast<const char*>(&entry.tag), sizeof(size_t));
-                if (is_element_node_data) {
-                    out.write(
-                        reinterpret_cast<const char*>(&entry.num_nodes_per_element), sizeof(int));
-                }
-                out.write(reinterpret_cast<const char*>(entry.data.data()),
-                    static_cast<std::streamsize>(sizeof(double) * entry.data.size()));
-            }
-        } else if (version == "2.2") {
-            int32_t tag, num_nodes_per_element;
-            for (const DataEntry& entry : data.entries) {
-                tag = static_cast<int32_t>(entry.tag);
-                out.write(reinterpret_cast<const char*>(&tag), 4);
-                if (is_element_node_data) {
-                    num_nodes_per_element = static_cast<int32_t>(entry.num_nodes_per_element);
-                    out.write(reinterpret_cast<const char*>(&num_nodes_per_element), 4);
-                }
-                out.write(reinterpret_cast<const char*>(entry.data.data()),
-                    static_cast<std::streamsize>(sizeof(double) * entry.data.size()));
-            }
+    out << data.header.string_tags.size() << '\n';
+    for (const auto& tag : data.header.string_tags) out << std::quoted(tag) << '\n';
+    out << data.header.real_tags.size() << '\n';
+    for (auto tag : data.header.real_tags) out << tag << '\n';
+    out << data.header.int_tags.size() << '\n';
+    for (auto tag : data.header.int_tags) out << tag << '\n';
+    for (const auto& entry : data.entries) {
+        if (is_binary) {
+            write_binary(out, &entry.tag);
+            if (is_element_node_data) write_binary(out, &entry.num_nodes_per_element);
+            write_binary(out, entry.data.data(), entry.data.size());
         } else {
-            throw InvalidFormat("Unsupported version " + version);
-        }
-    } else {
-        for (const DataEntry& entry : data.entries) {
-            out << entry.tag << " ";
-            if (is_element_node_data) {
-                out << entry.num_nodes_per_element << " ";
-            }
-            for (size_t i = 0; i < entry.data.size(); i++) {
-                out << entry.data[i];
-                if (i == entry.data.size() - 1) {
-                    out << std::endl;
-                } else {
-                    out << ' ';
-                }
-            }
+            out << entry.tag << ' ';
+            if (is_element_node_data) out << entry.num_nodes_per_element << ' ';
+            for (auto value : entry.data) out << value << ' ';
+            out << '\n';
         }
     }
+    if (is_binary) out << '\n';
+    if (!out) throw InvalidFormat("Failed to write MSH postprocessing data");
 }
 
 } // namespace internal

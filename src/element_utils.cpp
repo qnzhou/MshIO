@@ -2,7 +2,7 @@
 
 namespace mshio {
 
-void assert_element_is_supported(int element_type)
+void assert_element_is_supported(std::int32_t element_type)
 {
     if (element_type <= 0 || element_type >= 32) {
         std::stringstream msg;
@@ -11,7 +11,7 @@ void assert_element_is_supported(int element_type)
     }
 }
 
-size_t nodes_per_element(int element_type)
+size_t nodes_per_element(std::int32_t element_type)
 {
     assert_element_is_supported(element_type);
     // We support the first 15 element type so far.
@@ -50,11 +50,11 @@ size_t nodes_per_element(int element_type)
     return element_sizes[element_type];
 }
 
-int get_element_dim(int element_type)
+std::int32_t get_element_dim(std::int32_t element_type)
 {
     assert_element_is_supported(element_type);
     // We support the first 15 element type so far.
-    constexpr int element_dims[] = {0,
+    constexpr std::int32_t element_dims[] = {0,
         1,
         2,
         2,

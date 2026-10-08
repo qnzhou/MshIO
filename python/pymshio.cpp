@@ -13,7 +13,7 @@ NB_MODULE(pymshio, m)
         .def(nb::init<>())
         .def_rw("version", &mshio::MeshFormat::version)
         .def_rw("file_type", &mshio::MeshFormat::file_type)
-        .def_rw("data_size", &mshio::MeshFormat::data_size)
+        .def_rw("data_size", &mshio::MeshFormat::data_size, "MSH 4.1 requires 8 bytes on every host")
         .def("__repr__", [](const mshio::MeshFormat& self) {
             return "MeshFormat(version=" + self.version +
                    ", file_type=" + std::to_string(self.file_type) +
@@ -26,7 +26,7 @@ NB_MODULE(pymshio, m)
         .def_rw("entity_tag", &mshio::NodeBlock::entity_tag)
         .def_rw("parametric", &mshio::NodeBlock::parametric)
         .def_rw("num_nodes_in_block", &mshio::NodeBlock::num_nodes_in_block)
-        .def_rw("tags", &mshio::NodeBlock::tags)
+        .def_rw("tags", &mshio::NodeBlock::tags, "Unsigned 64-bit node identifiers")
         .def_rw("data", &mshio::NodeBlock::data)
         .def("__repr__", [](const mshio::NodeBlock& self) {
             return "NodeBlock(entity_dim=" + std::to_string(self.entity_dim) +
@@ -56,7 +56,7 @@ NB_MODULE(pymshio, m)
         .def_rw("entity_tag", &mshio::ElementBlock::entity_tag)
         .def_rw("element_type", &mshio::ElementBlock::element_type)
         .def_rw("num_elements_in_block", &mshio::ElementBlock::num_elements_in_block)
-        .def_rw("data", &mshio::ElementBlock::data)
+        .def_rw("data", &mshio::ElementBlock::data, "Unsigned 64-bit element tags and connectivity")
         .def("__repr__", [](const mshio::ElementBlock& self) {
             return "ElementBlock(entity_dim=" + std::to_string(self.entity_dim) +
                    ", entity_tag=" + std::to_string(self.entity_tag) +
@@ -91,7 +91,7 @@ NB_MODULE(pymshio, m)
 
     nb::class_<mshio::DataEntry>(m, "DataEntry")
         .def(nb::init<>())
-        .def_rw("tag", &mshio::DataEntry::tag)
+        .def_rw("tag", &mshio::DataEntry::tag, "Signed 32-bit postprocessing tag (Gmsh int field)")
         .def_rw("num_nodes_per_elements", &mshio::DataEntry::num_nodes_per_element)
         .def_rw("data", &mshio::DataEntry::data)
         .def("__repr__", [](const mshio::DataEntry& self) {

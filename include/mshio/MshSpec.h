@@ -1,53 +1,63 @@
 #pragma once
 
+#include <cstdint>
+#include <limits>
 #include <string>
 #include <vector>
 
 #include <mshio/MshSpecExt.h>
 
 namespace mshio {
+// MSH 4.1 format counts and identifiers are uint64_t, independently of the host ABI.
+// Container allocation sizes and indices remain host size_t and must fit in memory.
+static_assert(sizeof(std::uint64_t) == 8, "MSH requires eight-byte unsigned integers");
+static_assert(sizeof(std::int32_t) == 4, "MSH requires four-byte signed integers");
+static_assert(sizeof(double) == 8 && std::numeric_limits<double>::is_iec559,
+    "MSH requires eight-byte IEEE 754 doubles");
+
 
 struct MeshFormat
 {
     std::string version = "4.1";
-    int file_type = 0;
-    int data_size = sizeof(size_t);
+    std::int32_t file_type = 0;
+    // MSH 4.1 supports only eight-byte format size fields, including on wasm32.
+    std::int32_t data_size = 8;
 };
 
 struct NodeBlock
 {
-    int entity_dim = 0;
-    int entity_tag = 0;
-    int parametric = 0;
-    size_t num_nodes_in_block = 0;
-    std::vector<size_t> tags;
+    std::int32_t entity_dim = 0;
+    std::int32_t entity_tag = 0;
+    std::int32_t parametric = 0;
+    std::uint64_t num_nodes_in_block = 0;
+    std::vector<std::uint64_t> tags;
     std::vector<double> data;
 };
 
 struct Nodes
 {
-    size_t num_entity_blocks = 0;
-    size_t num_nodes = 0;
-    size_t min_node_tag = 0;
-    size_t max_node_tag = 0;
+    std::uint64_t num_entity_blocks = 0;
+    std::uint64_t num_nodes = 0;
+    std::uint64_t min_node_tag = 0;
+    std::uint64_t max_node_tag = 0;
     std::vector<NodeBlock> entity_blocks;
 };
 
 struct ElementBlock
 {
-    int entity_dim = 0;
-    int entity_tag = 0;
-    int element_type = 0;
-    size_t num_elements_in_block = 0;
-    std::vector<size_t> data;
+    std::int32_t entity_dim = 0;
+    std::int32_t entity_tag = 0;
+    std::int32_t element_type = 0;
+    std::uint64_t num_elements_in_block = 0;
+    std::vector<std::uint64_t> data;
 };
 
 struct Elements
 {
-    size_t num_entity_blocks = 0;
-    size_t num_elements = 0;
-    size_t min_element_tag = 0;
-    size_t max_element_tag = 0;
+    std::uint64_t num_entity_blocks = 0;
+    std::uint64_t num_elements = 0;
+    std::uint64_t min_element_tag = 0;
+    std::uint64_t max_element_tag = 0;
     std::vector<ElementBlock> entity_blocks;
 };
 
@@ -55,13 +65,14 @@ struct DataHeader
 {
     std::vector<std::string> string_tags; // [view name, <interpolation scheeme>]
     std::vector<double> real_tags; // [time value]
-    std::vector<int> int_tags; // [time step, num fields, num entries, partition id]
+    std::vector<std::int32_t> int_tags; // [time step, num fields, num entries, partition id]
 };
 
 struct DataEntry
 {
-    size_t tag = 0;
-    int num_nodes_per_element = 0; // Only used by ElementNodeData.
+    // Gmsh postprocessing tags are signed 32-bit int fields, not mesh-size identifiers.
+    std::int32_t tag = 0;
+    std::int32_t num_nodes_per_element = 0; // Only used by ElementNodeData.
     std::vector<double> data;
 };
 
@@ -72,47 +83,47 @@ struct Data
 };
 
 struct PointEntity {
-    int tag = 0;
+    std::int32_t tag = 0;
     double x = 0.0;
     double y = 0.0;
     double z = 0.0;
-    std::vector<int> physical_group_tags;
+    std::vector<std::int32_t> physical_group_tags;
 };
 
 struct CurveEntity {
-    int tag = 0;
+    std::int32_t tag = 0;
     double min_x = 0.0;
     double min_y = 0.0;
     double min_z = 0.0;
     double max_x = 0.0;
     double max_y = 0.0;
     double max_z = 0.0;
-    std::vector<int> physical_group_tags;
-    std::vector<int> boundary_point_tags;
+    std::vector<std::int32_t> physical_group_tags;
+    std::vector<std::int32_t> boundary_point_tags;
 };
 
 struct SurfaceEntity {
-    int tag = 0;
+    std::int32_t tag = 0;
     double min_x = 0.0;
     double min_y = 0.0;
     double min_z = 0.0;
     double max_x = 0.0;
     double max_y = 0.0;
     double max_z = 0.0;
-    std::vector<int> physical_group_tags;
-    std::vector<int> boundary_curve_tags;
+    std::vector<std::int32_t> physical_group_tags;
+    std::vector<std::int32_t> boundary_curve_tags;
 };
 
 struct VolumeEntity {
-    int tag = 0;
+    std::int32_t tag = 0;
     double min_x = 0.0;
     double min_y = 0.0;
     double min_z = 0.0;
     double max_x = 0.0;
     double max_y = 0.0;
     double max_z = 0.0;
-    std::vector<int> physical_group_tags;
-    std::vector<int> boundary_surface_tags;
+    std::vector<std::int32_t> physical_group_tags;
+    std::vector<std::int32_t> boundary_surface_tags;
 };
 
 struct Entities {
@@ -129,8 +140,8 @@ struct Entities {
 
 struct PhysicalGroup
 {
-    int dim = 0;
-    int tag = 0;
+    std::int32_t dim = 0;
+    std::int32_t tag = 0;
     std::string name;
 };
 

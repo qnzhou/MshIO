@@ -1,86 +1,29 @@
 #include "save_msh_curves.h"
-
-#include <mshio/MshSpec.h>
-#include <mshio/exception.h>
-
-#include <cassert>
+#include "io_utils.h"
 
 namespace mshio {
-
-namespace {
-
-void save_curves_ascii(std::ostream& out, const MshSpec& spec)
-{
-#ifdef MSHIO_EXT_NANOSPLINE
-    const auto& curves = spec.curves;
-    out << curves.size() << std::endl;
-
-    for (const auto& curve : curves) {
-        out << curve.curve_tag << " ";
-        out << curve.curve_type << " ";
-        out << curve.curve_degree << " ";
-        out << curve.num_control_points << " ";
-        out << curve.num_knots << " ";
-        out << curve.with_weights << std::endl;
-
-        const size_t dim = (curve.with_weights > 0) ? 4 : 3;
-        const size_t num_entries = curve.num_control_points * dim + curve.num_knots;
-        assert(num_entries == curve.data.size());
-
-        for (size_t i = 0; i < curve.num_control_points; i++) {
-            for (size_t j = 0; j < dim; j++) {
-                out << curve.data[i * dim + j];
-                if (j + 1 == dim) {
-                    out << std::endl;
-                } else {
-                    out << " ";
-                }
-            }
-        }
-
-        for (size_t i = 0; i < curve.num_knots; i++) {
-            out << curve.data[curve.num_control_points * dim + i] << std::endl;
-        }
-    }
-#endif
-}
-
-void save_curves_binary(std::ostream& out, const MshSpec& spec)
-{
-#ifdef MSHIO_EXT_NANOSPLINE
-    const auto& curves = spec.curves;
-    out << curves.size() << std::endl;
-
-    for (const auto& curve : curves) {
-        out << curve.curve_tag << " ";
-        out << curve.curve_type << " ";
-        out << curve.curve_degree << " ";
-        out << curve.num_control_points << " ";
-        out << curve.num_knots << " ";
-        out << curve.with_weights << std::endl;
-
-        const size_t dim = (curve.with_weights > 0) ? 4 : 3;
-        const size_t num_entries = curve.num_control_points * dim + curve.num_knots;
-        assert(num_entries == curve.data.size());
-
-        out.write(reinterpret_cast<const char*>(curve.data.data()), sizeof(double) * num_entries);
-    }
-#endif
-}
-
-} // namespace
-
 void save_curves(std::ostream& out, const MshSpec& spec)
 {
-    const bool is_ascii = spec.mesh_format.file_type == 0;
-
-    out << "$Curves" << std::endl;
-    if (is_ascii) {
-        save_curves_ascii(out, spec);
-    } else {
-        save_curves_binary(out, spec);
+    out << "$Curves\n";
+#ifdef MSHIO_EXT_NANOSPLINE
+    const bool binary = spec.mesh_format.file_type == 1;
+    out << spec.curves.size() << '\n';
+    for (const auto& curve : spec.curves) {
+        const auto entries = checked_sum(checked_product(curve.num_control_points,
+            curve.with_weights > 0 ? 4 : 3), curve.num_knots);
+        if (entries != curve.data.size()) throw InvalidFormat("Inconsistent curve data size");
+        checked_bytes(entries, sizeof(double));
+        out << curve.curve_tag << ' ' << curve.curve_type << ' ' << curve.curve_degree << ' '
+            << curve.num_control_points << ' ' << curve.num_knots << ' ' << curve.with_weights << '\n';
+        if (binary) {
+            write_binary(out, curve.data.data(), entries);
+            out << '\n';
+        } else for (auto value : curve.data) out << value << '\n';
     }
-    out << "$EndCurves" << std::endl;
+#else
+    (void)spec;
+#endif
+    out << "$EndCurves\n";
+    if (!out) throw InvalidFormat("Failed to write curves");
 }
-
 } // namespace mshio

@@ -19,6 +19,18 @@ make
 pip install git+https://github.com/qnzhou/MshIO.git
 ```
 
+To build and run both the C++ and Python binding tests from the repository root:
+
+```sh
+python3 -m pip install "numpy>=1.25"
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DMSHIO_BUILD_TESTS=ON -DMSHIO_PYTHON=ON
+cmake --build build --parallel
+ctest --test-dir build --output-on-failure
+```
+
+The Ubuntu CI job enables the Python bindings and runs `test_MshIO_python` through
+CTest alongside the C++ tests. The macOS and Windows jobs remain C++-only.
+
 ## Usage
 
 In C++:

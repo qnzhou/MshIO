@@ -12,6 +12,8 @@
 
 namespace mshio {
 
+// Skip at most count ASCII spaces, tabs, CRs, or LFs. Binary readers use count = 1
+// to consume only the separator: std::ws could also swallow whitespace-valued payload bytes.
 void eat_white_space(std::istream& in, size_t count = std::numeric_limits<size_t>::max());
 
 inline size_t checked_size(std::uint64_t count)

@@ -1,4 +1,5 @@
 #include <mshio/MshSpec.h>
+#include <mshio/exception.h>
 
 #include "save_msh_curves.h"
 #include "save_msh_data.h"
@@ -48,6 +49,8 @@ void save_msh(std::ostream& out, const MshSpec& spec)
         save_patches(out, spec);
     }
 #endif
+    out.flush();
+    if (!out) throw InvalidFormat("Failed to write MSH file");
 }
 
 void save_msh(const std::string& filename, const MshSpec& spec)

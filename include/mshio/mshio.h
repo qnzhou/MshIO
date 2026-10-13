@@ -15,7 +15,7 @@ void save_msh(const std::string& filename, const MshSpec& spec);
 
 void validate_spec(const MshSpec& spec);
 
-size_t nodes_per_element(int element_type);
-int get_element_dim(int element_type);
+size_t nodes_per_element(std::int32_t element_type);
+std::int32_t get_element_dim(std::int32_t element_type);
 
 }

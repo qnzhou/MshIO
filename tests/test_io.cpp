@@ -1,4 +1,5 @@
 #include <catch2/catch_test_macros.hpp>
+#include <cstdint>
 #include <sstream>
 
 #include <mshio/mshio.h>
@@ -17,7 +18,7 @@ void ASSERT_SAME_NODES(const MshSpec& spec1, const MshSpec& spec2)
     REQUIRE(nodes1.min_node_tag == nodes2.min_node_tag);
     REQUIRE(nodes1.max_node_tag == nodes2.max_node_tag);
 
-    size_t N = nodes1.num_entity_blocks;
+    const size_t N = nodes1.entity_blocks.size();
     for (size_t i = 0; i < N; i++) {
         const auto& block1 = nodes1.entity_blocks[i];
         const auto& block2 = nodes2.entity_blocks[i];
@@ -40,7 +41,7 @@ void ASSERT_SAME_ELEMENTS(const MshSpec& spec1, const MshSpec& spec2)
     REQUIRE(elements1.min_element_tag == elements2.min_element_tag);
     REQUIRE(elements1.max_element_tag == elements2.max_element_tag);
 
-    size_t M = elements1.num_entity_blocks;
+    const size_t M = elements1.entity_blocks.size();
     for (size_t i = 0; i < M; i++) {
         const auto& block1 = elements1.entity_blocks[i];
         const auto& block2 = elements2.entity_blocks[i];
@@ -540,7 +541,7 @@ TEST_CASE("element data")
         attr.header.real_tags = {0};
         attr.header.int_tags = {0, 1, static_cast<int>(data.size()), 0, 3};
 
-        size_t tag = 9;
+        std::int32_t tag = 9;
         for (const auto& value : data) {
             DataEntry entry;
             entry.tag = tag;
@@ -559,7 +560,7 @@ TEST_CASE("element data")
         attr.header.real_tags = {0};
         attr.header.int_tags = {0, 1, static_cast<int>(data.size()), 0, 10};
 
-        size_t tag = 10;
+        std::int32_t tag = 10;
         for (const auto& value : data) {
             DataEntry entry;
             entry.tag = tag;
@@ -596,7 +597,7 @@ TEST_CASE("element node data")
         attr.header.real_tags = {0};
         attr.header.int_tags = {0, 1, static_cast<int>(data.size()), 0, 10};
 
-        size_t tag = 10;
+        std::int32_t tag = 10;
         for (const auto& value : data) {
             DataEntry entry;
             entry.tag = tag;

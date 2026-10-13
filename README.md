@@ -19,6 +19,18 @@ make
 pip install git+https://github.com/qnzhou/MshIO.git
 ```
 
+To build and run both the C++ and Python binding tests from the repository root:
+
+```sh
+python3 -m pip install "numpy>=1.25"
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DMSHIO_BUILD_TESTS=ON -DMSHIO_PYTHON=ON
+cmake --build build --parallel
+ctest --test-dir build --output-on-failure
+```
+
+The Ubuntu CI job enables the Python bindings and runs `test_MshIO_python` through
+CTest alongside the C++ tests. The macOS and Windows jobs remain C++-only.
+
 ## Usage
 
 In C++:
@@ -30,13 +42,65 @@ mshio::MshSpec spec = mshio::load_msh("input.msh");
 mshio::save_msh("output.msh", spec);
 ```
 
-or in Python
+or in Python (requires Python 3.10 or newer)
 ```python
 import mshio
 
 spec = mshio.load_msh("input.msh")
 mshio.save_msh("output.msh", spec)
 ```
+
+Python object collections (`entity_blocks`, `entries`, entity collections,
+`physical_groups`, and the data collections) are live vector wrappers, not
+Python lists. Accessing a collection or its length does not copy its elements.
+Indexing and iteration return independent element copies to avoid dangling
+references when the vector changes. Modify an element and assign only that item
+back:
+
+```python
+blocks = spec.nodes.entity_blocks
+block = blocks[0]
+block.entity_tag = 2
+coordinates = block.data
+coordinates[0] += 1.0
+block.data = coordinates
+blocks[0] = block
+```
+
+Collection operations such as `append`, `pop`, and `clear` modify the stored
+mesh directly. Whole-collection assignment still accepts Python sequences.
+Keep mesh counts and tag bounds consistent when changing collection or payload
+sizes; `validate_spec()` checks these invariants.
+
+Large numeric fields return fresh, flat, writable NumPy snapshots:
+
+| Field | NumPy dtype |
+| --- | --- |
+| `NodeBlock.tags`, `ElementBlock.data` | `uint64` |
+| `NodeBlock.data`, `DataEntry.data` | `float64` |
+
+Editing a snapshot does not change the mesh until it is assigned back. Snapshots
+are copied under the GIL into independently owned buffers before NumPy sees
+them, and remain valid after replacing their source field or destroying the
+mesh. Setters accept one-dimensional CPU arrays and Python sequences: matching,
+aligned contiguous arrays are copied directly, while unaligned, object-dtype,
+non-native-endian, and other supported inputs use checked scalar conversion.
+Integer identifiers are not silently narrowed or wrapped. Small metadata
+vectors (header tags, physical-group tags, and boundary tags) retain their
+Python-list copy semantics.
+
+Nested object collections also require assignment back at each item boundary:
+
+```python
+dataset = spec.node_data[0]
+entry = dataset.entries[0]
+entry.data = [1.0, 2.0, 3.0]
+dataset.entries[0] = entry
+spec.node_data[0] = dataset
+```
+
+Mesh and dataset representations summarize C++ fields directly, without copying
+numeric payloads.
 
 ## `MshSpec` data structure
 
@@ -65,8 +129,47 @@ The follow sections are supported by MSH format, but not yet supported by MshIO
 
 All fields will be populated by `mshio::load_msh()` method, and all fields
 should be set up correctly before calling `mshio::save_msh()` method. The helper
-method `mshio::validate_spec(spec)` can be used to check if a given `spec` is
-valid.
+method `mshio::validate_spec(spec)` checks that counts and data sizes are
+consistent, node and element tags are unique, and every element references an
+existing node. `load_msh()` does not perform these checks; call `validate_spec()`
+before relying on tags from untrusted files.
+
+### Portability and public integer types
+
+MSH 4.1 uses an eight-byte format contract independent of the host ABI:
+specification `size_t` fields are `std::uint64_t`, specification `int` fields are
+`std::int32_t`, and coordinates and values are eight-byte `double`s. Both ASCII
+and binary MSH 4.1 files require `MeshFormat::data_size == 8`; four-byte MSH 4.1
+files are not supported. The existing binary endianness policy is unchanged.
+
+Node and element counts, block counts, tag bounds, node tags, element tags, and
+connectivity now use `std::uint64_t` instead of host `size_t`. Entity dimensions,
+entity tags, physical-group tags, signed boundary tags, and element types use
+`std::int32_t`. Post-processing entry tags and integer header tags remain
+32-bit, as required by the current MSH specification; they cannot refer to mesh
+identifiers above `INT32_MAX`. MSH 2.2 retains its separate 32-bit layouts and
+rejects identifiers that cannot be represented when saving.
+
+The optional NanoSpline `Curve` and `Patch` integer fields also use
+`std::uint64_t`; their custom-section headers remain ASCII.
+
+C++ consumers must migrate tag vectors and tag-to-index maps to the fixed-width
+types; resolve identifiers before converting them to local mesh indices. Python
+integers retain the same API but must fit the corresponding fixed-width field.
+Container sizes and indices remain host `size_t`. Sparse mesh identifiers above
+`UINT32_MAX` do not require correspondingly large allocations.
+
+Loading checks file counts against host allocation and container limits, and
+checks stride and byte-size products before allocation or binary IO. Declared
+counts are not trusted for allocation: containers grow as data is actually read,
+so memory use is proportional to the input size. Out-of-range fields,
+inconsistent section counts, overflowing allocation/stride products, and
+truncated supported-section payloads raise exceptions in Release as well as
+Debug builds. This is not complete file-format validation: empty/headerless
+inputs can produce an empty spec, and `validate_spec()` checks mesh data
+invariants rather than required-header presence. A mesh must still fit the
+host's available memory.
+
 
 ### Mesh format
 
@@ -78,7 +181,7 @@ required.
 auto& format = spec.mesh_format;
 format.version = "4.1";            // Only version "2.2" and "4.1" are supported.
 format.file_type = 1;              // 0: ASCII, 1: binary.
-format.data_size = sizeof(size_t); // Size of data, defined as sizeof(size_t) = 8.
+format.data_size = 8;              // Fixed MSH 4.1 format width.
 ```
 
 ### Nodes
@@ -166,7 +269,7 @@ See all supported element types [here](#Supported-element-types).
 
 #### Element data
 
-The element data is a flattened `std::vector` of `size_t`.  It follows the
+The element data is a flattened `std::vector<std::uint64_t>`. It follows the
 convention below:
 
 ```
@@ -208,8 +311,8 @@ auto& physical_groups = surface_entity->physical_group_tags;
 ### Physical groups
 
 Physical groups are used to tag elements with arbitrary metadata (e.g.
-"boundary", "steel", etc.). Physical groups have an `int` tag, `int` dimension,
-and `string` name. The name may be empty.
+"boundary", "steel", etc.). Physical groups have a `std::int32_t` tag and
+dimension, and a `string` name. The name may be empty.
 
 ```c++
 auto& physical_groups = spec.physical_groups;
@@ -235,8 +338,8 @@ auto& element_node_data = spec.element_node_data[k];
 
 #### Data header
 
-Data header consists of arrays of `string`, `double` and `int` tags.  Some tags
-has pre-defined meaning:
+Data header consists of arrays of `string`, `double` and `std::int32_t` tags.
+Some tags have pre-defined meaning:
 
 ```c++
 auto& header = node_data.header;

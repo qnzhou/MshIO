@@ -6,20 +6,27 @@ jobs:
   build-Ubuntu:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7.0.1
+
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+
+    - name: install Python test dependencies
+      run: python -m pip install "numpy>=1.25"
 
     - name: build and run
       run: |
         mkdir build
         cd build
-        cmake .. -DCMAKE_BUILD_TYPE=Release -DMSHIO_BUILD_TESTS=On -DMSHIO_BUILD_EXAMPLES=On
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DMSHIO_BUILD_TESTS=On -DMSHIO_BUILD_EXAMPLES=On -DMSHIO_PYTHON=On
         make -j
-        ctest
+        ctest --output-on-failure
 
   build-MacOS:
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7.0.1
 
     - name: build and run
       run: |
@@ -32,7 +39,7 @@ jobs:
   build-Windows:
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v7.0.1
 
     - name: build and run
       run: |

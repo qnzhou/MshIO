@@ -1,46 +1,27 @@
 #include "load_msh_format.h"
 #include "io_utils.h"
-
 #include <mshio/MshSpec.h>
 #include <mshio/exception.h>
 
-#include <cassert>
-#include <fstream>
-#include <sstream>
-#include <string>
-
 namespace mshio {
-
 void load_mesh_format(std::istream& in, MshSpec& spec)
 {
-    MeshFormat& format = spec.mesh_format;
-    in >> format.version;
-
-    if (format.version != "2.2" && format.version != "4.1") {
-        std::stringstream msg;
-        msg << "Unsupported MSH version: " << format.version;
-        throw UnsupportedFeature(msg.str());
-    }
-
-    in >> format.file_type;
-    in >> format.data_size;
-
-    if (format.version == "4.1" && sizeof(size_t) != format.data_size) {
-        std::stringstream msg;
-        msg << "MSH file (v4.1) requested data size of " << format.data_size
-            << " bytes, which is different than `size_t` (" << sizeof(size_t) << " bytes)";
-        throw UnsupportedFeature(msg.str());
-    }
-
-    if (format.file_type != 0) {
-        int one = 0;
+    auto& format = spec.mesh_format;
+    if (!(in >> format.version)) throw InvalidFormat("Missing MSH version");
+    if (format.version != "2.2" && format.version != "4.1")
+        throw UnsupportedFeature("Unsupported MSH version: " + format.version);
+    read_ascii(in, format.file_type);
+    read_ascii(in, format.data_size);
+    if (format.file_type != 0 && format.file_type != 1)
+        throw InvalidFormat("Invalid MSH file type");
+    if (format.version == "4.1" && format.data_size != 8)
+        throw UnsupportedFeature("MSH 4.1 requires an eight-byte data size");
+    if (format.file_type == 1) {
+        std::int32_t one = 0;
         eat_white_space(in);
-        in.read(reinterpret_cast<char*>(&one), sizeof(int));
-        if (one != 1) {
-            throw UnsupportedFeature(
-                "MSH file (v" + format.version + ") is encoded with unsupported endianness!");
-        }
+        read_binary(in, &one);
+        if (one != 1)
+            throw UnsupportedFeature("MSH file is encoded with unsupported endianness");
     }
 }
-
 } // namespace mshio

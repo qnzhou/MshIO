@@ -4,7 +4,7 @@ import tempfile
 import unittest
 
 import numpy as np
-import pymshio as mshio
+import mshio
 
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"

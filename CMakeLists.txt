@@ -42,7 +42,7 @@ if (MSHIO_PYTHON)
     set(PY_SRC_FILE "${PROJECT_SOURCE_DIR}/python/pymshio.cpp")
     nanobind_add_module(pymshio NB_STATIC ${PY_SRC_FILE})
     target_link_libraries(pymshio PUBLIC mshio::mshio)
-    install(TARGETS pymshio LIBRARY DESTINATION .)
+    install(TARGETS pymshio LIBRARY DESTINATION mshio)
     add_library(mshio::pymshio ALIAS pymshio)
     set_property(TARGET pymshio PROPERTY POSITION_INDEPENDENT_CODE ON)
 endif()
@@ -73,13 +73,6 @@ if (MSHIO_BUILD_TESTS)
         MSHIO_DATA_DIR="${PROJECT_SOURCE_DIR}/data")
 
     catch_discover_tests(test_MshIO)
-
-    if (MSHIO_PYTHON)
-        add_test(NAME test_MshIO_python
-            COMMAND ${Python_EXECUTABLE} ${PROJECT_SOURCE_DIR}/tests/test_python.py)
-        set_tests_properties(test_MshIO_python PROPERTIES
-            ENVIRONMENT "PYTHONPATH=$<TARGET_FILE_DIR:pymshio>")
-    endif()
 
     if(NOT MSVC)
         target_compile_options(test_MshIO PRIVATE -Wconversion -Wall -Werror)

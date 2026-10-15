@@ -209,6 +209,91 @@ class GmshLoaderTests(unittest.TestCase):
                         mshio.save_msh(str(actual), spec)
                         self.assertEqual(snapshot(actual), expected)
 
+    def test_literal_backslashes_match_gmsh_quoted_names(self):
+        names = [r"C:\tmp\view", "C:\\tmp\\", r"\\server\share", r"\n\t"]
+        with tempfile.TemporaryDirectory() as directory:
+            for name in names:
+                for version in ("2.2", "4.1"):
+                    for encoding in (0, 1):
+                        with self.subTest(name=name, version=version, encoding=encoding):
+                            gmsh.clear()
+                            gmsh.open(str(DATA_DIR / "test_2.2_ascii.msh"))
+                            gmsh.model.setPhysicalName(2, 99, name)
+                            view = int(gmsh.view.getTags()[0])
+                            gmsh.view.option.setString(view, "Name", name)
+                            gmsh.option.setNumber("Mesh.MshFileVersion", float(version))
+                            gmsh.option.setNumber("Mesh.Binary", encoding)
+                            gmsh.option.setNumber("Mesh.SaveAll", 0)
+                            gmsh.option.setNumber("PostProcessing.SaveMesh", 0)
+                            reference = Path(directory) / "reference.msh"
+                            gmsh.write(str(reference))
+                            gmsh.view.write(view, str(reference), True)
+
+                            spec = mshio.load_msh(str(reference))
+                            self.assertEqual(spec.physical_groups[0].name, name)
+                            self.assertEqual(spec.node_data[0].header.string_tags[0], name)
+                            actual = Path(directory) / "mshio.msh"
+                            mshio.save_msh(str(actual), spec)
+                            gmsh.clear()
+                            gmsh.open(str(actual))
+                            self.assertEqual(gmsh.model.getPhysicalName(2, 99), name)
+                            view = int(gmsh.view.getTags()[0])
+                            self.assertEqual(gmsh.view.option.getString(view, "Name"), name)
+                            kind, tags, values, time, components = gmsh.view.getModelData(view, 0)
+                            self.assertEqual(kind, "NodeData")
+                            self.assertEqual(
+                                {int(tag): tuple(value) for tag, value in zip(tags, values)},
+                                {1: (0.0,), 2: (0.1,), 3: (0.2,),
+                                 4: (0.0,), 5: (0.2,), 6: (0.4,)},
+                            )
+
+    def test_empty_dataset_headers_match_gmsh_defaults(self):
+        # Empty datasets have no Gmsh view, but must not stop the parser before
+        # the populated view appended after them.
+        source = (DATA_DIR / "test_2.2_ascii.msh").read_text()
+        mesh, populated = source.split("$NodeData\n", 1)
+        integer_headers = [[], [2], [2, 3]]
+        sections = []
+        for kind in ("NodeData", "ElementData", "ElementNodeData"):
+            for tags in integer_headers:
+                integers = "".join(f"{tag}\n" for tag in tags)
+                sections.append(f"${kind}\n0\n0\n{len(tags)}\n{integers}$End{kind}\n")
+        with tempfile.TemporaryDirectory() as directory:
+            reference = Path(directory) / "reference.msh"
+            reference.write_text(mesh + "".join(sections) + "$NodeData\n" + populated)
+            gmsh.open(str(reference))
+            self.assertEqual(len(gmsh.view.getTags()), 1)
+            spec = mshio.load_msh(str(reference))
+            for collection in (spec.node_data, spec.element_data, spec.element_node_data):
+                for index, tags in enumerate(integer_headers):
+                    self.assertEqual(collection[index].header.int_tags, tags)
+                    self.assertEqual(len(collection[index].entries), 0)
+
+            for version in ("2.2", "4.1"):
+                for encoding in (0, 1):
+                    with self.subTest(version=version, encoding=encoding):
+                        spec.mesh_format.version = version
+                        spec.mesh_format.file_type = encoding
+                        actual = Path(directory) / "mshio.msh"
+                        mshio.save_msh(str(actual), spec)
+                        gmsh.clear()
+                        gmsh.open(str(actual))
+                        self.assertEqual(len(gmsh.view.getTags()), 1)
+                        view = int(gmsh.view.getTags()[0])
+                        kind, tags, values, time, components = gmsh.view.getModelData(view, 0)
+                        self.assertEqual(kind, "NodeData")
+                        self.assertEqual(
+                            {int(tag): tuple(value) for tag, value in zip(tags, values)},
+                            {1: (0.0,), 2: (0.1,), 3: (0.2,),
+                             4: (0.0,), 5: (0.2,), 6: (0.4,)},
+                        )
+                        loaded = mshio.load_msh(str(actual))
+                        for collection in (loaded.node_data, loaded.element_data,
+                                           loaded.element_node_data):
+                            for index, tags in enumerate(integer_headers):
+                                self.assertEqual(collection[index].header.int_tags, tags)
+                                self.assertEqual(len(collection[index].entries), 0)
+
 
 if __name__ == "__main__":
     unittest.main()

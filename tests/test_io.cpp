@@ -970,3 +970,150 @@ TEST_CASE("MSH 2.2 derives physical tags from dimension-specific entities", "[io
         REQUIRE(legacy_wire_tags(selected.str(), encoding != 0) == selected_expected);
     }
 }
+
+TEST_CASE("MSH quoted names preserve literal backslashes", "[io][strings]")
+{
+    using namespace mshio;
+    const std::vector<std::string> names = {
+        "C:\\tmp\\view", "C:\\tmp\\", "\\\\server\\share", "\\n\\t", "", " spaced name "};
+    std::ostringstream source;
+    source << "$MeshFormat\n4.1 0 8\n$EndMeshFormat\n$PhysicalNames\n" << names.size() << '\n';
+    std::int32_t tag = 0;
+    for (const auto& name : names) source << "0 " << ++tag << " \"" << name << "\"\n";
+    source << "$EndPhysicalNames\n";
+    for (const auto* section : {"NodeData", "ElementData", "ElementNodeData"}) {
+        source << '$' << section << '\n' << names.size() << '\n';
+        for (const auto& name : names) source << '"' << name << "\"\n";
+        source << "0\n3\n0\n1\n1\n1 ";
+        if (std::string(section) == "ElementNodeData") source << "1 ";
+        source << "2.5\n$End" << section << '\n';
+    }
+    std::istringstream in(source.str());
+    auto spec = load_msh(in);
+    REQUIRE(spec.physical_groups.size() == names.size());
+    for (size_t i = 0; i < names.size(); ++i) REQUIRE(spec.physical_groups[i].name == names[i]);
+    for (const auto* dataset : {&spec.node_data[0], &spec.element_data[0], &spec.element_node_data[0]})
+        REQUIRE(dataset->header.string_tags == names);
+    for (const auto* version : {"2.2", "4.1"}) {
+        for (std::int32_t encoding : {0, 1}) {
+            CAPTURE(version, encoding);
+            spec.mesh_format.version = version;
+            spec.mesh_format.file_type = encoding;
+            std::stringstream saved;
+            save_msh(saved, spec);
+            const auto loaded = load_msh(saved);
+            for (size_t i = 0; i < names.size(); ++i)
+                REQUIRE(loaded.physical_groups[i].name == names[i]);
+            for (const auto* dataset : {&loaded.node_data[0], &loaded.element_data[0],
+                &loaded.element_node_data[0]}) {
+                REQUIRE(dataset->header.string_tags == names);
+                REQUIRE(dataset->entries[0].data == std::vector<double>{2.5});
+            }
+        }
+    }
+}
+
+TEST_CASE("MSH rejects unterminated and unrepresentable quoted names", "[io][strings]")
+{
+    using namespace mshio;
+    for (const auto& invalid : {std::string("\"unfinished"), std::string("\"line\nbreak\""),
+        std::string("\"C:\\tmp\\")}) {
+        CAPTURE(invalid);
+        std::istringstream physical("$MeshFormat\n4.1 0 8\n$EndMeshFormat\n"
+            "$PhysicalNames\n1\n0 1 " + invalid);
+        REQUIRE_THROWS_AS(load_msh(physical), InvalidFormat);
+        std::istringstream dataset("$MeshFormat\n4.1 0 8\n$EndMeshFormat\n"
+            "$NodeData\n1\n" + invalid);
+        REQUIRE_THROWS_AS(load_msh(dataset), InvalidFormat);
+    }
+    for (const auto& name : {std::string("embedded\"quote"), std::string("line\nbreak"),
+        std::string("carriage\rreturn")}) {
+        MshSpec spec;
+        spec.physical_groups = {{0, 1, name}};
+        std::ostringstream physical;
+        REQUIRE_THROWS_AS(save_msh(physical, spec), InvalidFormat);
+        spec.physical_groups.clear();
+        Data data;
+        data.header = {{name}, {}, {0, 1, 0}};
+        spec.node_data = {data};
+        std::ostringstream dataset;
+        REQUIRE_THROWS_AS(save_msh(dataset, spec), InvalidFormat);
+    }
+}
+
+TEST_CASE("Empty MSH datasets retain omitted integer tags", "[io][data-headers]")
+{
+    using namespace mshio;
+    const std::vector<std::vector<std::int32_t>> headers = {{}, {2}, {2, 3}, {2, 3, 0}};
+    for (const auto* version : {"2.2", "4.1"}) {
+        for (std::int32_t input_encoding : {0, 1}) {
+            CAPTURE(version, input_encoding);
+            std::ostringstream source;
+            source << "$MeshFormat\n" << version << ' ' << input_encoding << " 8\n";
+            if (input_encoding) {
+                const std::int32_t one = 1;
+                source.write(reinterpret_cast<const char*>(&one), sizeof(one));
+                source << '\n';
+            }
+            source << "$EndMeshFormat\n";
+            for (const auto* section : {"NodeData", "ElementData", "ElementNodeData"}) {
+                for (const auto& tags : headers) {
+                    source << '$' << section << "\n0\n0\n" << tags.size() << '\n';
+                    for (auto tag : tags) source << tag << '\n';
+                    source << "$End" << section << '\n';
+                }
+            }
+            // A populated dataset after the empty ones must remain readable.
+            source << "$NodeData\n1\n\"populated\"\n0\n3\n0\n1\n1\n";
+            if (input_encoding) {
+                const std::int32_t tag = 1;
+                const double value = 2.5;
+                source.write(reinterpret_cast<const char*>(&tag), sizeof(tag));
+                source.write(reinterpret_cast<const char*>(&value), sizeof(value));
+                source << '\n';
+            } else source << "1 2.5\n";
+            source << "$EndNodeData\n";
+            std::istringstream in(source.str());
+            auto spec = load_msh(in);
+            REQUIRE(spec.node_data.size() == headers.size() + 1);
+            REQUIRE(spec.element_data.size() == headers.size());
+            REQUIRE(spec.element_node_data.size() == headers.size());
+            for (std::int32_t output_encoding : {0, 1}) {
+                CAPTURE(output_encoding);
+                spec.mesh_format.file_type = output_encoding;
+                std::stringstream saved;
+                save_msh(saved, spec);
+                const auto loaded = load_msh(saved);
+                for (const auto* collection : {&loaded.node_data, &loaded.element_data,
+                    &loaded.element_node_data}) {
+                    for (size_t i = 0; i < headers.size(); ++i) {
+                        REQUIRE((*collection)[i].header.string_tags.empty());
+                        REQUIRE((*collection)[i].header.real_tags.empty());
+                        REQUIRE((*collection)[i].header.int_tags == headers[i]);
+                        REQUIRE((*collection)[i].entries.empty());
+                    }
+                }
+                REQUIRE(loaded.node_data.back().header.string_tags ==
+                    std::vector<std::string>{"populated"});
+                REQUIRE(loaded.node_data.back().entries[0].tag == 1);
+                REQUIRE(loaded.node_data.back().entries[0].data == std::vector<double>{2.5});
+            }
+        }
+    }
+}
+
+TEST_CASE("Nonempty MSH datasets require matching declared entry counts", "[io][data-headers]")
+{
+    using namespace mshio;
+    for (const auto& tags : std::vector<std::vector<std::int32_t>>{{}, {0}, {0, 1}, {0, 1, 0}}) {
+        for (auto member : {&MshSpec::node_data, &MshSpec::element_data, &MshSpec::element_node_data}) {
+            MshSpec spec;
+            Data data;
+            data.header.int_tags = tags;
+            data.entries = {{1, 1, {2.5}}};
+            (spec.*member).push_back(data);
+            std::ostringstream out;
+            REQUIRE_THROWS_AS(save_msh(out, spec), InvalidFormat);
+        }
+    }
+}

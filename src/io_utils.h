@@ -7,6 +7,7 @@
 #include <istream>
 #include <limits>
 #include <ostream>
+#include <string>
 #include <type_traits>
 #include <vector>
 
@@ -132,6 +133,28 @@ typename std::enable_if<std::is_integral<T>::value>::type read_ascii(std::istrea
 inline void read_ascii(std::istream& in, double& value)
 {
     if (!(in >> value)) throw InvalidFormat("Invalid or truncated MSH floating-point field");
+}
+
+// MSH strings are delimited by quotes, with no backslash escape syntax.
+inline void read_quoted_string(std::istream& in, std::string& value)
+{
+    in >> std::ws;
+    if (in.get() != '"') throw InvalidFormat("Missing opening quote in MSH string");
+    value.clear();
+    char ch;
+    while (in.get(ch)) {
+        if (ch == '"') return;
+        if (ch == '\n' || ch == '\r') break;
+        value.push_back(ch);
+    }
+    throw InvalidFormat("Unterminated MSH quoted string");
+}
+
+inline void write_quoted_string(std::ostream& out, const std::string& value)
+{
+    if (value.find_first_of("\"\r\n") != std::string::npos)
+        throw InvalidFormat("MSH quoted strings cannot contain quotes or line breaks");
+    out << '"' << value << '"';
 }
 
 template <typename T>

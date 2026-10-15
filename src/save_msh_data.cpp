@@ -4,7 +4,6 @@
 #include <mshio/MshSpec.h>
 #include <mshio/exception.h>
 
-#include <iomanip>
 #include <ostream>
 #include <string>
 
@@ -23,10 +22,9 @@ void save_data(std::ostream& out,
     checked_int32(data.header.string_tags.size());
     checked_int32(data.header.real_tags.size());
     checked_int32(data.header.int_tags.size());
-    if (data.header.int_tags.size() < 3)
-        throw InvalidFormat("Data requires at least 3 int tags.");
-    const auto fields = nonnegative(data.header.int_tags[1]);
-    if (nonnegative(data.header.int_tags[2]) != data.entries.size())
+    const auto fields = data.header.int_tags.size() > 1 ? nonnegative(data.header.int_tags[1]) : 0;
+    const auto count = data.header.int_tags.size() > 2 ? nonnegative(data.header.int_tags[2]) : 0;
+    if (count != data.entries.size())
         throw InvalidFormat("Inconsistent MSH data entry count");
     for (const auto& entry : data.entries) {
         const auto nodes = is_element_node_data ? nonnegative(entry.num_nodes_per_element) : 1;
@@ -35,7 +33,10 @@ void save_data(std::ostream& out,
         checked_bytes(entry.data.size(), sizeof(double));
     }
     out << data.header.string_tags.size() << '\n';
-    for (const auto& tag : data.header.string_tags) out << std::quoted(tag) << '\n';
+    for (const auto& tag : data.header.string_tags) {
+        write_quoted_string(out, tag);
+        out << '\n';
+    }
     out << data.header.real_tags.size() << '\n';
     for (auto tag : data.header.real_tags) out << tag << '\n';
     out << data.header.int_tags.size() << '\n';

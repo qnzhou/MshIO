@@ -378,7 +378,7 @@ header.real_tags = {...};    // [<time value>, ...]
 header.int_tags = {...};     // [time step, num fields, num entities, <partition id>, ...]
 ```
 
-Required special tags:
+Conventional header tags:
 * `string_tags[0]`: The name of the data.
 * `int_tags[0]`: Time step index, starting from 0.
 * `int_tags[1]`: The number of fields per data entry. 1 for scalar field, 3 for

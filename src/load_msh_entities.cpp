@@ -1,6 +1,6 @@
 #include "load_msh_entities.h"
-#include "io_utils.h"
 #include <mshio/MshSpec.h>
+#include "io_utils.h"
 
 namespace mshio {
 namespace {
@@ -23,7 +23,7 @@ void load_bounded_entity(std::istream& in, Entity& entity, bool binary)
     read_field(in, entity.max_z, binary);
     load_tags(in, entity.physical_group_tags, binary);
 }
-}
+} // namespace
 
 void load_entities(std::istream& in, MshSpec& spec)
 {

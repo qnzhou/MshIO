@@ -27,8 +27,14 @@ ctest --test-dir build --output-on-failure
 To build and test the Python package:
 
 ```sh
-pip install .
-pytest tests
+python -m pip install .
+```
+
+To run python unit tests:
+
+```sh
+python -m pip install '.[test]'
+python -m pytest tests
 ```
 
 ## Usage
@@ -118,14 +124,12 @@ the following sections are supported:
 |         [Node data] | Scalar/vector/tensor fields defined on nodes.                                |
 |      [Element data] | Scalar/vector/tensor fields defined on elements.                             |
 | [Element-node data] | Scalar/vector/tensor fields defined over each node of each element.          |
+| [Partitioned entities] | Partition memberships, parent entities, and ghost-entity ownership. |
+| [Periodic links] | Affine transforms and corresponding slave/master node pairs. |
+| [Ghost elements] | Element ownership and receiving ghost partitions. |
+| [Discrete parametrizations] | Curve/surface samples, local triangulations, and curvature vectors. |
+| [Interpolation schemes] | Named interpolation topologies and their matrices. |
 
-The follow sections are supported by MSH format, but not yet supported by MshIO
-(contribution welcomed):
-* Partitioned entities
-* Periodic
-* Ghost elements
-* Parametrizations
-* Interpolation scheme
 
 All fields will be populated by `mshio::load_msh()` method, and all fields
 should be set up correctly before calling `mshio::save_msh()` method. The helper
@@ -133,43 +137,6 @@ method `mshio::validate_spec(spec)` checks that counts and data sizes are
 consistent, node and element tags are unique, and every element references an
 existing node. `load_msh()` does not perform these checks; call `validate_spec()`
 before relying on tags from untrusted files.
-
-### Portability and public integer types
-
-MSH 4.1 uses an eight-byte format contract independent of the host ABI:
-specification `size_t` fields are `std::uint64_t`, specification `int` fields are
-`std::int32_t`, and coordinates and values are eight-byte `double`s. Both ASCII
-and binary MSH 4.1 files require `MeshFormat::data_size == 8`; four-byte MSH 4.1
-files are not supported. The existing binary endianness policy is unchanged.
-
-Node and element counts, block counts, tag bounds, node tags, element tags, and
-connectivity now use `std::uint64_t` instead of host `size_t`. Entity dimensions,
-entity tags, physical-group tags, signed boundary tags, and element types use
-`std::int32_t`. Post-processing entry tags and integer header tags remain
-32-bit, as required by the current MSH specification; they cannot refer to mesh
-identifiers above `INT32_MAX`. MSH 2.2 retains its separate 32-bit layouts and
-rejects identifiers that cannot be represented when saving.
-
-The optional NanoSpline `Curve` and `Patch` integer fields also use
-`std::uint64_t`; their custom-section headers remain ASCII.
-
-C++ consumers must migrate tag vectors and tag-to-index maps to the fixed-width
-types; resolve identifiers before converting them to local mesh indices. Python
-integers retain the same API but must fit the corresponding fixed-width field.
-Container sizes and indices remain host `size_t`. Sparse mesh identifiers above
-`UINT32_MAX` do not require correspondingly large allocations.
-
-Loading checks file counts against host allocation and container limits, and
-checks stride and byte-size products before allocation or binary IO. Declared
-counts are not trusted for allocation: containers grow as data is actually read,
-so memory use is proportional to the input size. Out-of-range fields,
-inconsistent section counts, overflowing allocation/stride products, and
-truncated supported-section payloads raise exceptions in Release as well as
-Debug builds. This is not complete file-format validation: empty/headerless
-inputs can produce an empty spec, and `validate_spec()` checks mesh data
-invariants rather than required-header presence. A mesh must still fit the
-host's available memory.
-
 
 ### Mesh format
 
@@ -248,6 +215,31 @@ block.num_elements_in_block = 12; // The number of elements in this block.
 block.data = {...};               // See more detail below.
 ```
 
+MSH 2.2 stores integer metadata tags on each element. `ElementBlock::legacy_tags`
+(`block.legacy_tags` in Python) retains these tags for every element in the block:
+the physical-group tag, elementary-entity tag, and any following partition,
+ghost-partition, or application-defined tags. Elements with different metadata
+remain in separate blocks. Loaded records with fewer than two tags are padded
+with zeros, which mean no physical group or no elementary entity.
+
+When saving MSH 2.2:
+
+- Nonempty `legacy_tags` supplies the physical-group tag and all tags after the
+  elementary-entity tag. `block.entity_tag` supplies the elementary-entity tag,
+  including after changing a block's entity.
+- With empty `legacy_tags`, the physical-group tag comes from the matching
+  entity's `physical_group_tags`, or zero if there is no membership. Entity
+  dimension and tag both participate in this lookup; physical names alone do
+  not assign membership.
+- Multiple physical groups on an entity cannot fit in one MSH 2.2 element
+  record. Saving raises `UnsupportedFeature` unless `legacy_tags` explicitly
+  selects the element's physical group.
+
+Clear `legacy_tags` to derive membership from entities after editing them.
+MSH 4.1 output does not serialize `legacy_tags`; its physical groups are stored
+on entities. Partition and ghost metadata use `partitioned_entities` and
+`ghost_elements`, rather than the legacy element-tag array.
+
 #### Element types
 
 MSH format supports a large set of finite element types.  Element types
@@ -308,6 +300,78 @@ assert(surface_entity != surface_entities.end());
 auto& physical_groups = surface_entity->physical_group_tags;
 ```
 
+### Partitioned entities and ghost elements
+
+`spec.partitioned_entities` stores `num_partitions`, a `ghost_entities` vector,
+and separate `points`, `curves`, `surfaces`, and `volumes` vectors. The
+`PartitionedPointEntity`, `PartitionedCurveEntity`, `PartitionedSurfaceEntity`,
+and `PartitionedVolumeEntity` types retain the corresponding ordinary entity's
+geometry, physical-group and boundary fields, plus `parent_dim`, `parent_tag`,
+and `partitions`. A zero parent tag means no parent. A `GhostEntity` contains
+its entity `tag` and owning `partition`.
+
+`spec.ghost_elements` contains `GhostElement` records: a 64-bit `element_tag`,
+a 32-bit owning `partition`, and a list of 32-bit `ghost_partitions` receiving
+the element. Entity and partition tags remain signed 32-bit fields, unlike mesh
+identifiers and section counts.
+
+Both sections support MSH 4.1 ASCII and binary. Saving either nonempty section
+as MSH 2.2 raises an exception instead of silently dropping it. Legacy 2.2
+per-element partition tags remain available through `ElementBlock::legacy_tags`;
+there is no implicit conversion between these representations.
+
+### Periodic links
+
+`spec.periodic_links` contains `PeriodicLink` records with `entity_dim`,
+`slave_tag`, `master_tag`, `affine_transform`, and `node_pairs`. The affine
+transform is empty or contains a row-major 4-by-4 matrix (16 doubles).
+Each `PeriodicNodePair` stores 64-bit slave and master node identifiers as
+`slave_tag` and `master_tag`.
+
+MSH 4.1 uses its native ASCII/binary section layout. MSH 2.2 keeps this section
+ASCII even in binary files, with the optional `Affine` marker; node identifiers
+must fit signed 32-bit integers when saving that version. To independently
+load legacy periodicity with Gmsh, set `Mesh.IgnorePeriodicity = 0`: Gmsh skips
+MSH 2.2 periodic sections by default.
+
+### Discrete parametrizations
+
+`spec.parametrizations` contains `CurveParametrization` and
+`SurfaceParametrization` records in `curves` and `surfaces`. Their samples are
+local discrete geometry data, not references to the mesh's node tags:
+
+- Curves store `tag`, `num_nodes`, and flat `data` records `[x, y, z, u]`.
+- Surfaces store `tag`, `num_nodes`, `num_triangles`, and 11-double `data`
+  records `[x, y, z, u, v, curvMaxX, curvMaxY, curvMaxZ, curvMinX, curvMinY,
+  curvMinZ]`. `triangle_indices` contains three signed 32-bit, **zero-based**
+  local sample indices per triangle.
+
+Keep counts consistent when editing payloads; malformed sizes and out-of-range
+triangle indices are rejected. This section supports MSH 4.1 ASCII/binary and
+rejects nonempty MSH 2.2 export. It is distinct from parametric coordinates in
+`NodeBlock::data`.
+
+### Interpolation schemes
+
+`spec.interpolation_schemes` contains named `InterpolationScheme` records.
+Each scheme has `name` and a `topologies` vector. An `InterpolationTopology`
+contains `element_topology` and `matrices`; topology IDs 1–10 designate points,
+lines, triangles, quadrangles, tetrahedra, pyramids, prisms, hexahedra, polygons,
+and polyhedra respectively. These IDs are not MSH element-type IDs.
+
+Each `InterpolationMatrix` has signed 32-bit `num_rows`, `num_columns`, and a
+row-major double `data` vector. All matrices and multiple named schemes are
+preserved. The section is ASCII even in binary MSH 2.2/4.1 files and is written
+before datasets that refer to it through `DataHeader::string_tags[1]`.
+
+All of these models are exposed in Python under the same names and fields.
+Object-vector indexing returns independent copies: edit a record and assign it
+back at every object-vector boundary, as for existing mesh blocks. New numeric
+metadata vectors use Python-list snapshots. `validate_spec()` checks their local
+sizes and identifier ranges, but does not resolve optional metadata references
+against a complete mesh; standalone metadata/post-processing files are allowed.
+
+
 ### Physical groups
 
 Physical groups are used to tag elements with arbitrary metadata (e.g.
@@ -348,7 +412,7 @@ header.real_tags = {...};    // [<time value>, ...]
 header.int_tags = {...};     // [time step, num fields, num entities, <partition id>, ...]
 ```
 
-Required special tags:
+Conventional header tags:
 * `string_tags[0]`: The name of the data.
 * `int_tags[0]`: Time step index, starting from 0.
 * `int_tags[1]`: The number of fields per data entry. 1 for scalar field, 3 for
@@ -379,7 +443,19 @@ fields.
 
 ### Supported element types
 
-The following types are supported by MshIO:
+MshIO supports **132 fixed-width element types** from the released Gmsh 4.15.2
+wire definitions: IDs **1–33, 36–68, 70–75, 79–137, and 140**, in both MSH 2.2
+and 4.1 ASCII/binary. `nodes_per_element()` and `get_element_dim()` provide the
+record width and dimension for every supported ID.
+
+Variable-width polygon/polyhedron types 34, 35, and 69 are rejected, as are
+undefined IDs 76–78 and MINI types 138–139, which lack fixed-width MSH record
+definitions in the released reader. Some defined fixed-width IDs also lack a
+working factory in Gmsh 4.15.2 itself; MshIO preserves their wire records without
+requiring Gmsh to instantiate a basis. Gmsh-backed tests cover the native-loader
+subset, while C++ round-trip tests cover all 132 types.
+
+The original low-order and order-3–5 types are listed below:
 
 | Type ID | Name                                     | Dim | # nodes |
 | :-----: | ---------------------------------------- | --- | ------- |
@@ -415,6 +491,25 @@ The following types are supported by MshIO:
 |   30    | 35-node fourth order tetrahedron         | 3   | 35      |
 |   31    | 56-node fifth order tetrahedron          | 3   | 56      |
 
+Additional supported families:
+
+| Type IDs | Family |
+| --- | --- |
+| 32–33 | 22/28-node incomplete tetrahedra |
+| 36–61 | Higher-order complete/incomplete quadrangles and triangles |
+| 62–66 | Order-6–10 lines |
+| 67–68, 70 | Border line/triangle and child line |
+| 71–75, 79–83 | Order-6–10 complete/incomplete tetrahedra |
+| 84–89, 132 | Order-zero line, triangle, quadrangle, tetrahedron, hexahedron, prism, pyramid |
+| 90–91, 106–110 | Order-3–9 complete prisms |
+| 92–98 | Order-3–9 complete hexahedra, including 64- and 125-node types 92/93 |
+| 99–105 | Order-3–9 incomplete hexahedra |
+| 111–117 | Order-3–9 incomplete prisms |
+| 118–124, 125–131 | Order-3–9 complete/incomplete pyramids |
+| 133–136 | Fixed-width XFEM point, line, triangle, tetrahedron |
+| 137 | 16-node incomplete tetrahedron |
+| 140 | 4-node trihedron |
+
 
 [MSH format]: https://gmsh.info/doc/texinfo/gmsh.html#MSH-file-format
 [Mesh format]: #Mesh-format
@@ -425,3 +520,8 @@ The following types are supported by MshIO:
 [Element-node data]: #Post-processing-data
 [Entities]: #Entities
 [Physical groups]: #Physical-groups
+[Partitioned entities]: #Partitioned-entities-and-ghost-elements
+[Ghost elements]: #Partitioned-entities-and-ghost-elements
+[Periodic links]: #Periodic-links
+[Discrete parametrizations]: #Discrete-parametrizations
+[Interpolation schemes]: #Interpolation-schemes

@@ -21,7 +21,7 @@ void export_fixtures(const std::string& directory)
         for (std::int32_t encoding : {0, 1}) {
             spec.mesh_format.file_type = encoding;
             const auto path = directory + "/portability" + (sparse ? "_sparse" : "") +
-                (encoding == 0 ? "_ascii.msh" : "_binary.msh");
+                              (encoding == 0 ? "_ascii.msh" : "_binary.msh");
             mshio::save_msh(path, spec);
             const auto actual = mshio::load_msh(path);
             portability::same(actual, expected);

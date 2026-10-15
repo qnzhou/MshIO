@@ -37,4 +37,4 @@ struct Patch
     std::vector<double> data;
 };
 
-}
+} // namespace mshio

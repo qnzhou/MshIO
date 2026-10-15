@@ -7,6 +7,7 @@
 #include <istream>
 #include <limits>
 #include <ostream>
+#include <string>
 #include <type_traits>
 #include <vector>
 
@@ -15,6 +16,10 @@ namespace mshio {
 // Skip at most count ASCII spaces, tabs, CRs, or LFs. Binary readers use count = 1
 // to consume only the separator: std::ws could also swallow whitespace-valued payload bytes.
 void eat_white_space(std::istream& in, size_t count = std::numeric_limits<size_t>::max());
+
+// Input-only state: each MeshFormat resets it after inspecting the byte-order
+// marker. Keep it on the stream, not in the mesh or in process-global state.
+long& input_byte_swap(std::ios_base& stream);
 
 inline size_t checked_size(std::uint64_t count)
 {
@@ -64,7 +69,8 @@ template <typename T>
 void reserve_next(std::vector<T>& values, size_t total, size_t needed = 1)
 {
     if (values.capacity() - values.size() >= needed) return;
-    const auto ahead = std::max(values.size(), std::max<size_t>(1, max_speculative_bytes / sizeof(T)));
+    const auto ahead =
+        std::max(values.size(), std::max<size_t>(1, max_speculative_bytes / sizeof(T)));
     values.reserve(values.size() + std::max(needed, std::min(total - values.size(), ahead)));
 }
 
@@ -105,11 +111,10 @@ typename std::enable_if<std::is_integral<T>::value>::type read_ascii(std::istrea
         in.get();
         ch = in.peek();
     }
-    if (negative && !std::is_signed<T>::value)
-        throw InvalidFormat("Negative unsigned MSH field");
+    if (negative && !std::is_signed<T>::value) throw InvalidFormat("Negative unsigned MSH field");
     if (ch < '0' || ch > '9') throw InvalidFormat("Invalid or truncated MSH integer");
-    const auto limit = static_cast<std::uint64_t>(std::numeric_limits<T>::max()) +
-        (negative ? 1u : 0u);
+    const auto limit =
+        static_cast<std::uint64_t>(std::numeric_limits<T>::max()) + (negative ? 1u : 0u);
     std::uint64_t magnitude = 0;
     do {
         const auto digit = static_cast<unsigned>(ch - '0');
@@ -122,8 +127,8 @@ typename std::enable_if<std::is_integral<T>::value>::type read_ascii(std::istrea
     if (ch != std::char_traits<char>::eof() && !std::isspace(static_cast<unsigned char>(ch)))
         throw InvalidFormat("Invalid MSH integer token");
     if (negative) {
-        value = magnitude == limit ? std::numeric_limits<T>::min() :
-            static_cast<T>(-static_cast<std::int64_t>(magnitude));
+        value = magnitude == limit ? std::numeric_limits<T>::min()
+                                   : static_cast<T>(-static_cast<std::int64_t>(magnitude));
     } else {
         value = static_cast<T>(magnitude);
     }
@@ -134,12 +139,39 @@ inline void read_ascii(std::istream& in, double& value)
     if (!(in >> value)) throw InvalidFormat("Invalid or truncated MSH floating-point field");
 }
 
+// MSH strings are delimited by quotes, with no backslash escape syntax.
+inline void read_quoted_string(std::istream& in, std::string& value)
+{
+    in >> std::ws;
+    if (in.get() != '"') throw InvalidFormat("Missing opening quote in MSH string");
+    value.clear();
+    char ch;
+    while (in.get(ch)) {
+        if (ch == '"') return;
+        if (ch == '\n' || ch == '\r') break;
+        value.push_back(ch);
+    }
+    throw InvalidFormat("Unterminated MSH quoted string");
+}
+
+inline void write_quoted_string(std::ostream& out, const std::string& value)
+{
+    if (value.find_first_of("\"\r\n") != std::string::npos)
+        throw InvalidFormat("MSH quoted strings cannot contain quotes or line breaks");
+    out << '"' << value << '"';
+}
+
 template <typename T>
 void read_binary(std::istream& in, T* values, std::uint64_t count = 1)
 {
     const auto bytes = checked_bytes(count, sizeof(T));
     if (bytes && !in.read(reinterpret_cast<char*>(values), bytes))
         throw InvalidFormat("Truncated MSH binary data");
+    if (bytes && input_byte_swap(in)) {
+        auto* data = reinterpret_cast<unsigned char*>(values);
+        for (std::uint64_t i = 0; i < count; ++i, data += sizeof(T))
+            std::reverse(data, data + sizeof(T));
+    }
 }
 
 template <typename T>
@@ -153,8 +185,10 @@ void write_binary(std::ostream& out, const T* values, std::uint64_t count = 1)
 template <typename T>
 void read_field(std::istream& in, T& value, bool binary)
 {
-    if (binary) read_binary(in, &value);
-    else read_ascii(in, value);
+    if (binary)
+        read_binary(in, &value);
+    else
+        read_ascii(in, value);
 }
 
 template <typename T>

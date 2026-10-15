@@ -4,8 +4,7 @@
 
 #include <ostream>
 
-namespace mshio
-{
+namespace mshio {
 
 inline void save_nanospline_format(std::ostream& out, const MshSpec& spec)
 {
@@ -14,4 +13,4 @@ inline void save_nanospline_format(std::ostream& out, const MshSpec& spec)
     out << "$EndNanoSplineFormat" << std::endl;
 }
 
-}
+} // namespace mshio

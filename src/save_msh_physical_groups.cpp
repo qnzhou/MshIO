@@ -4,7 +4,6 @@
 #include <mshio/MshSpec.h>
 #include <mshio/exception.h>
 
-#include <iomanip>
 
 namespace mshio {
 
@@ -15,10 +14,11 @@ void save_physical_groups(std::ostream& out, const MshSpec& spec)
     checked_int32(groups.size());
     out << groups.size() << std::endl;
 
-    for (const auto& group: groups) {
+    for (const auto& group : groups) {
         out << group.dim << " ";
         out << group.tag << " ";
-        out << std::quoted(group.name) << std::endl;
+        write_quoted_string(out, group.name);
+        out << std::endl;
     }
     out << "$EndPhysicalNames" << std::endl;
 }

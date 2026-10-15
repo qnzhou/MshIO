@@ -1,17 +1,19 @@
 #include "load_msh_elements.h"
-#include "element_utils.h"
-#include "io_utils.h"
 #include <mshio/MshSpec.h>
 #include <algorithm>
 #include <array>
 #include <limits>
 #include <map>
 #include <set>
+#include <utility>
+#include "element_utils.h"
+#include "io_utils.h"
 
 namespace mshio {
 namespace {
 template <typename Entity>
-void create_entities(const std::map<std::int32_t, std::set<std::int32_t>>& tags,
+void create_entities(
+    const std::map<std::int32_t, std::set<std::int32_t>>& tags,
     std::vector<Entity>& entities)
 {
     for (const auto& entry : tags) {
@@ -22,7 +24,7 @@ void create_entities(const std::map<std::int32_t, std::set<std::int32_t>>& tags,
         entity.physical_group_tags.assign(entry.second.begin(), entry.second.end());
     }
 }
-}
+} // namespace
 
 void load_elements(std::istream& in, MshSpec& spec)
 {
@@ -43,9 +45,14 @@ void load_elements(std::istream& in, MshSpec& spec)
             if (block.entity_dim < 0 || block.entity_dim > 3)
                 throw InvalidFormat("Invalid MSH element dimension");
             total = checked_sum(total, block.num_elements_in_block);
-            if (total > elements.num_elements) throw InvalidFormat("Inconsistent MSH element count");
+            if (total > elements.num_elements)
+                throw InvalidFormat("Inconsistent MSH element count");
             const auto stride = nodes_per_element(block.element_type) + 1;
-            read_values(in, block.data, checked_product(block.num_elements_in_block, stride), binary);
+            read_values(
+                in,
+                block.data,
+                checked_product(block.num_elements_in_block, stride),
+                binary);
         });
         if (total != elements.num_elements) throw InvalidFormat("Inconsistent MSH element count");
     } else if (spec.mesh_format.version == "2.2") {
@@ -83,8 +90,11 @@ void load_elements(std::istream& in, MshSpec& spec)
                 auto& block = elements.entity_blocks.back();
                 block.entity_dim = get_element_dim(type);
                 block.element_type = type;
-                block.entity_tag = tags.size() > 1 ? tags[1] : (tags.empty() ? 1 : tags[0]);
-                if (tags.size() > 1) physical_tags[block.entity_dim][tags[1]].insert(tags[0]);
+                block.entity_tag = tags.size() > 1 ? tags[1] : 0;
+                tags.resize(std::max<size_t>(2, tags.size()), 0);
+                auto& groups = physical_tags[block.entity_dim][block.entity_tag];
+                if (tags[0] != 0) groups.insert(tags[0]);
+                block.legacy_tags = std::move(tags);
                 block.num_elements_in_block = 1;
                 block.data.resize(n + 1);
                 block.data[0] = nonnegative(id);
@@ -100,6 +110,7 @@ void load_elements(std::istream& in, MshSpec& spec)
         create_entities(physical_tags[1], spec.entities.curves);
         create_entities(physical_tags[2], spec.entities.surfaces);
         create_entities(physical_tags[3], spec.entities.volumes);
-    } else throw UnsupportedFeature("Unsupported MSH version: " + spec.mesh_format.version);
+    } else
+        throw UnsupportedFeature("Unsupported MSH version: " + spec.mesh_format.version);
 }
 } // namespace mshio

@@ -18,4 +18,4 @@ void validate_spec(const MshSpec& spec);
 size_t nodes_per_element(std::int32_t element_type);
 std::int32_t get_element_dim(std::int32_t element_type);
 
-}
+} // namespace mshio

@@ -5,7 +5,6 @@
 #include "io_utils.h"
 
 #include <fstream>
-#include <iomanip>
 #include <string>
 
 namespace mshio {
@@ -17,7 +16,7 @@ void load_data_header(std::istream& in, DataHeader& header)
     std::int32_t count;
     read_ascii(in, count);
     read_records(header.string_tags, nonnegative(count), [&](std::string& tag) {
-        if (!(in >> std::quoted(tag))) throw InvalidFormat("Truncated MSH string tag");
+        read_quoted_string(in, tag);
     });
     read_ascii(in, count);
     read_values(in, header.real_tags, nonnegative(count), false);
@@ -25,20 +24,20 @@ void load_data_header(std::istream& in, DataHeader& header)
     read_values(in, header.int_tags, nonnegative(count), false);
 }
 
-void load_data(std::istream& in,
+void load_data(
+    std::istream& in,
     Data& data,
     const std::string& version,
     bool is_binary,
     bool is_element_node_data = false)
 {
-    if (version != "4.1" && version != "2.2")
-        throw InvalidFormat("Unsupported version " + version);
+    if (version != "4.1" && version != "2.2") throw InvalidFormat("Unsupported version " + version);
     load_data_header(in, data.header);
-    if (data.header.int_tags.size() < 3)
-        throw InvalidFormat("Data requires at least 3 int tags.");
-    const auto fields = nonnegative(data.header.int_tags[1]);
+    // Gmsh defaults omitted component and entry counts to zero.
+    const auto fields = data.header.int_tags.size() > 1 ? nonnegative(data.header.int_tags[1]) : 0;
+    const auto count = data.header.int_tags.size() > 2 ? nonnegative(data.header.int_tags[2]) : 0;
     if (is_binary) eat_white_space(in, 1);
-    read_records(data.entries, nonnegative(data.header.int_tags[2]), [&](DataEntry& entry) {
+    read_records(data.entries, count, [&](DataEntry& entry) {
         read_field(in, entry.tag, is_binary);
         std::uint64_t nodes = 1;
         if (is_element_node_data) {

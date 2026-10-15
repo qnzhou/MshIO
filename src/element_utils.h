@@ -1,7 +1,7 @@
 #pragma once
 
-#include <cstdint>
 #include <mshio/exception.h>
+#include <cstdint>
 
 #include <sstream>
 

@@ -24,7 +24,8 @@ void regroup_nodes_into_blocks(MshSpec& spec)
         for (size_t i = 0; i < block.num_elements_in_block; i++) {
             for (size_t j = 0; j < n; j++) {
                 auto it = node_entities.find(block.data[i * (n + 1) + j + 1]);
-                if (it == node_entities.end()) throw InvalidFormat("Element references unknown node");
+                if (it == node_entities.end())
+                    throw InvalidFormat("Element references unknown node");
                 it->second = {block.entity_dim, block.entity_tag};
             }
         }
@@ -78,13 +79,15 @@ void regroup_elements_into_blocks(MshSpec& spec)
 
     std::int32_t curr_dim = 0, curr_tag = 0, curr_element_type = 0;
     for (auto& block : elements.entity_blocks) {
-        if (element_blocks.empty() || block.entity_dim != curr_dim || block.entity_tag != curr_tag ||
-            block.element_type != curr_element_type) {
+        if (element_blocks.empty() || block.entity_dim != curr_dim ||
+            block.entity_tag != curr_tag || block.element_type != curr_element_type ||
+            block.legacy_tags != element_blocks.back().legacy_tags) {
             element_blocks.emplace_back();
             auto& curr_block = element_blocks.back();
             curr_block.entity_dim = block.entity_dim;
             curr_block.entity_tag = block.entity_tag;
             curr_block.element_type = block.element_type;
+            curr_block.legacy_tags = std::move(block.legacy_tags);
 
             curr_dim = block.entity_dim;
             curr_tag = block.entity_tag;
@@ -92,8 +95,8 @@ void regroup_elements_into_blocks(MshSpec& spec)
         }
 
         auto& curr_block = element_blocks.back();
-        curr_block.num_elements_in_block = checked_sum(curr_block.num_elements_in_block,
-            block.num_elements_in_block);
+        curr_block.num_elements_in_block =
+            checked_sum(curr_block.num_elements_in_block, block.num_elements_in_block);
         checked_count(curr_block.data, checked_sum(curr_block.data.size(), block.data.size()));
         curr_block.data.insert(curr_block.data.end(), block.data.begin(), block.data.end());
     }

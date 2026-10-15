@@ -20,9 +20,12 @@ jobs:
         make -j
         ctest --output-on-failure
 
+    - name: install Gmsh shared-library dependencies
+      run: sudo apt-get update && sudo apt-get install -y libglu1-mesa
+
     - name: build and test Python package
       run: |
-        python -m pip install . pytest
+        python -m pip install '.[test]'
         python -m pytest tests
 
   build-MacOS:

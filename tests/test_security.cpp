@@ -73,7 +73,7 @@ bool rejected_within_cap(const std::string& contents)
 std::string section(const char* version, const std::string& name, const std::string& payload)
 {
     return std::string("$MeshFormat\n") + version + " 0 8\n$EndMeshFormat\n$" + name + "\n" +
-        payload + "\n$End" + name + "\n";
+           payload + "\n$End" + name + "\n";
 }
 
 template <typename T>

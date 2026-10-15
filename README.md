@@ -27,8 +27,14 @@ ctest --test-dir build --output-on-failure
 To build and test the Python package:
 
 ```sh
-pip install .
-pytest tests
+python -m pip install .
+```
+
+To run python unit tests:
+
+```sh
+python -m pip install '.[test]'
+python -m pytest tests
 ```
 
 ## Usage

@@ -18,6 +18,12 @@ dependencies = [
 ]
 urls.repository = "https://github.com/qnzhou/MshIO"
 
+[project.optional-dependencies]
+test = [
+    "pytest>=7",
+    "gmsh>=4.13.1,<5",
+]
+
 [tool.scikit-build.cmake.define]
 MSHIO_PYTHON = "ON"
 CMAKE_OSX_DEPLOYMENT_TARGET = "11.0"

@@ -6,6 +6,7 @@
 namespace mshio {
 void load_mesh_format(std::istream& in, MshSpec& spec)
 {
+    input_byte_swap(in) = 0;
     auto& format = spec.mesh_format;
     if (!(in >> format.version)) throw InvalidFormat("Missing MSH version");
     if (format.version != "2.2" && format.version != "4.1")
@@ -20,8 +21,8 @@ void load_mesh_format(std::istream& in, MshSpec& spec)
         std::int32_t one = 0;
         eat_white_space(in);
         read_binary(in, &one);
-        if (one != 1)
-            throw UnsupportedFeature("MSH file is encoded with unsupported endianness");
+        if (one == 0x01000000) input_byte_swap(in) = 1;
+        else if (one != 1) throw InvalidFormat("Invalid MSH binary byte-order marker");
     }
 }
 } // namespace mshio

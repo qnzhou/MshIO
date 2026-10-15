@@ -17,6 +17,10 @@ namespace mshio {
 // to consume only the separator: std::ws could also swallow whitespace-valued payload bytes.
 void eat_white_space(std::istream& in, size_t count = std::numeric_limits<size_t>::max());
 
+// Input-only state: each MeshFormat resets it after inspecting the byte-order
+// marker. Keep it on the stream, not in the mesh or in process-global state.
+long& input_byte_swap(std::ios_base& stream);
+
 inline size_t checked_size(std::uint64_t count)
 {
     if (count > std::numeric_limits<size_t>::max())
@@ -163,6 +167,11 @@ void read_binary(std::istream& in, T* values, std::uint64_t count = 1)
     const auto bytes = checked_bytes(count, sizeof(T));
     if (bytes && !in.read(reinterpret_cast<char*>(values), bytes))
         throw InvalidFormat("Truncated MSH binary data");
+    if (bytes && input_byte_swap(in)) {
+        auto* data = reinterpret_cast<unsigned char*>(values);
+        for (std::uint64_t i = 0; i < count; ++i, data += sizeof(T))
+            std::reverse(data, data + sizeof(T));
+    }
 }
 
 template <typename T>

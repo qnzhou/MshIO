@@ -138,43 +138,6 @@ consistent, node and element tags are unique, and every element references an
 existing node. `load_msh()` does not perform these checks; call `validate_spec()`
 before relying on tags from untrusted files.
 
-### Portability and public integer types
-
-MSH 4.1 uses an eight-byte format contract independent of the host ABI:
-specification `size_t` fields are `std::uint64_t`, specification `int` fields are
-`std::int32_t`, and coordinates and values are eight-byte `double`s. Both ASCII
-and binary MSH 4.1 files require `MeshFormat::data_size == 8`; four-byte MSH 4.1
-files are not supported. The existing binary endianness policy is unchanged.
-
-Node and element counts, block counts, tag bounds, node tags, element tags, and
-connectivity now use `std::uint64_t` instead of host `size_t`. Entity dimensions,
-entity tags, physical-group tags, signed boundary tags, and element types use
-`std::int32_t`. Post-processing entry tags and integer header tags remain
-32-bit, as required by the current MSH specification; they cannot refer to mesh
-identifiers above `INT32_MAX`. MSH 2.2 retains its separate 32-bit layouts and
-rejects identifiers that cannot be represented when saving.
-
-The optional NanoSpline `Curve` and `Patch` integer fields also use
-`std::uint64_t`; their custom-section headers remain ASCII.
-
-C++ consumers must migrate tag vectors and tag-to-index maps to the fixed-width
-types; resolve identifiers before converting them to local mesh indices. Python
-integers retain the same API but must fit the corresponding fixed-width field.
-Container sizes and indices remain host `size_t`. Sparse mesh identifiers above
-`UINT32_MAX` do not require correspondingly large allocations.
-
-Loading checks file counts against host allocation and container limits, and
-checks stride and byte-size products before allocation or binary IO. Declared
-counts are not trusted for allocation: containers grow as data is actually read,
-so memory use is proportional to the input size. Out-of-range fields,
-inconsistent section counts, overflowing allocation/stride products, and
-truncated supported-section payloads raise exceptions in Release as well as
-Debug builds. This is not complete file-format validation: empty/headerless
-inputs can produce an empty spec, and `validate_spec()` checks mesh data
-invariants rather than required-header presence. A mesh must still fit the
-host's available memory.
-
-
 ### Mesh format
 
 Mesh format section is the header of MSH file.  It contains information about

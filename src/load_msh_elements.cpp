@@ -7,6 +7,7 @@
 #include <limits>
 #include <map>
 #include <set>
+#include <utility>
 
 namespace mshio {
 namespace {
@@ -83,8 +84,11 @@ void load_elements(std::istream& in, MshSpec& spec)
                 auto& block = elements.entity_blocks.back();
                 block.entity_dim = get_element_dim(type);
                 block.element_type = type;
-                block.entity_tag = tags.size() > 1 ? tags[1] : (tags.empty() ? 1 : tags[0]);
-                if (tags.size() > 1) physical_tags[block.entity_dim][tags[1]].insert(tags[0]);
+                block.entity_tag = tags.size() > 1 ? tags[1] : 0;
+                tags.resize(std::max<size_t>(2, tags.size()), 0);
+                auto& groups = physical_tags[block.entity_dim][block.entity_tag];
+                if (tags[0] != 0) groups.insert(tags[0]);
+                block.legacy_tags = std::move(tags);
                 block.num_elements_in_block = 1;
                 block.data.resize(n + 1);
                 block.data[0] = nonnegative(id);

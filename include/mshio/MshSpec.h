@@ -50,6 +50,10 @@ struct ElementBlock
     std::int32_t element_type = 0;
     std::uint64_t num_elements_in_block = 0;
     std::vector<std::uint64_t> data;
+    // MSH 2.2 integer tags shared by every element in this block. Empty means
+    // derive physical membership from Entities. Loaded tags are padded to two
+    // entries; entity_tag is authoritative for the second entry when saving.
+    std::vector<std::int32_t> legacy_tags = {};
 };
 
 struct Elements

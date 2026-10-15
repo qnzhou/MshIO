@@ -128,6 +128,7 @@ NB_MODULE(pymshio, m)
         .def_rw("entity_tag", &mshio::ElementBlock::entity_tag)
         .def_rw("element_type", &mshio::ElementBlock::element_type)
         .def_rw("num_elements_in_block", &mshio::ElementBlock::num_elements_in_block)
+        .def_rw("legacy_tags", &mshio::ElementBlock::legacy_tags)
         .def("__repr__", [](const mshio::ElementBlock& self) {
             return "ElementBlock(entity_dim=" + std::to_string(self.entity_dim) +
                    ", entity_tag=" + std::to_string(self.entity_tag) +

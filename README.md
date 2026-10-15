@@ -248,6 +248,30 @@ block.num_elements_in_block = 12; // The number of elements in this block.
 block.data = {...};               // See more detail below.
 ```
 
+MSH 2.2 stores integer metadata tags on each element. `ElementBlock::legacy_tags`
+(`block.legacy_tags` in Python) retains these tags for every element in the block:
+the physical-group tag, elementary-entity tag, and any following partition,
+ghost-partition, or application-defined tags. Elements with different metadata
+remain in separate blocks. Loaded records with fewer than two tags are padded
+with zeros, which mean no physical group or no elementary entity.
+
+When saving MSH 2.2:
+
+- Nonempty `legacy_tags` supplies the physical-group tag and all tags after the
+  elementary-entity tag. `block.entity_tag` supplies the elementary-entity tag,
+  including after changing a block's entity.
+- With empty `legacy_tags`, the physical-group tag comes from the matching
+  entity's `physical_group_tags`, or zero if there is no membership. Entity
+  dimension and tag both participate in this lookup; physical names alone do
+  not assign membership.
+- Multiple physical groups on an entity cannot fit in one MSH 2.2 element
+  record. Saving raises `UnsupportedFeature` unless `legacy_tags` explicitly
+  selects the element's physical group.
+
+Clear `legacy_tags` to derive membership from entities after editing them.
+MSH 4.1 output does not serialize `legacy_tags`; its physical groups are stored
+on entities, and its partition/ghost sections remain unsupported.
+
 #### Element types
 
 MSH format supports a large set of finite element types.  Element types

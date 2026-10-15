@@ -54,6 +54,8 @@ void validate_spec(const MshSpec& spec)
     for (const ElementBlock& block : elements.entity_blocks) {
         total_elements = checked_sum(total_elements, block.num_elements_in_block);
         ASSERT(block.entity_dim >= 0 && block.entity_dim <= 3, "Invalid element dimension.");
+        ASSERT(block.legacy_tags.empty() || block.legacy_tags.size() >= 2,
+            "Legacy element tags require physical and entity entries.");
         const size_t entries_per_element = nodes_per_element(block.element_type) + 1;
         ASSERT(block.data.size() == checked_product(block.num_elements_in_block,
             entries_per_element), "Invalid element data size.");

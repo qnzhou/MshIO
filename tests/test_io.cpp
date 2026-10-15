@@ -1,8 +1,10 @@
 #include <catch2/catch_test_macros.hpp>
 #include <cstdint>
 #include <sstream>
+#include <utility>
 
 #include <mshio/mshio.h>
+#include <mshio/exception.h>
 
 namespace {
 
@@ -815,3 +817,156 @@ TEST_CASE("NanoSpline extension", "[nanospline][ext][io]")
     save_and_load(spec);
 }
 #endif
+
+namespace {
+
+// Decode the legacy wire layout independently of load_msh, so a matching
+// reader/writer mistake cannot hide a physical/entity tag swap.
+std::vector<std::vector<std::int32_t>> legacy_wire_tags(
+    const std::string& contents, bool binary)
+{
+    const auto start = contents.find("$Elements\n");
+    REQUIRE(start != std::string::npos);
+    std::istringstream in(contents.substr(start + 10));
+    std::uint64_t count = 0;
+    in >> count;
+    in.get();
+    auto integer = [&]() {
+        std::int32_t value = 0;
+        if (binary) in.read(reinterpret_cast<char*>(&value), sizeof(value));
+        else in >> value;
+        REQUIRE(in.good());
+        return value;
+    };
+    std::vector<std::vector<std::int32_t>> result;
+    while (result.size() < count) {
+        if (!binary) integer(); // element identifier
+        const auto type = integer();
+        const auto block_count = binary ? integer() : 1;
+        const auto num_tags = integer();
+        REQUIRE(block_count > 0);
+        REQUIRE(num_tags >= 0);
+        for (std::int32_t i = 0; i < block_count; ++i) {
+            if (binary) integer();
+            std::vector<std::int32_t> tags;
+            for (std::int32_t j = 0; j < num_tags; ++j) tags.push_back(integer());
+            result.push_back(std::move(tags));
+            for (size_t j = 0; j < mshio::nodes_per_element(type); ++j) integer();
+        }
+    }
+    REQUIRE(result.size() == count);
+    return result;
+}
+
+} // namespace
+
+TEST_CASE("MSH 2.2 preserves per-element physical partition and ghost tags", "[io][v22]")
+{
+    using namespace mshio;
+    const std::vector<std::vector<std::int32_t>> input_tags = {
+        {7, 9, 2, 1, -2, 42}, {7, 9, 2, 1, -2, 42},
+        {8, 9, 1, 3}, {0, 9}, {5}, {}};
+    const std::vector<std::vector<std::int32_t>> expected = {
+        {7, 9, 2, 1, -2, 42}, {7, 9, 2, 1, -2, 42},
+        {8, 9, 1, 3}, {0, 9}, {5, 0}, {0, 0}};
+    for (std::int32_t input_encoding : {0, 1}) {
+        CAPTURE(input_encoding);
+        std::ostringstream source;
+        auto integer = [&](std::int32_t value) {
+            source.write(reinterpret_cast<const char*>(&value), sizeof(value));
+        };
+        source << "$MeshFormat\n2.2 " << input_encoding << " 8\n";
+        if (input_encoding) { integer(1); source << '\n'; }
+        source << "$EndMeshFormat\n$PhysicalNames\n2\n0 7 \"first\"\n0 8 \"second\"\n"
+            "$EndPhysicalNames\n$Nodes\n1\n";
+        if (input_encoding) {
+            integer(1);
+            const double xyz[] = {0, 0, 0};
+            source.write(reinterpret_cast<const char*>(xyz), sizeof(xyz));
+            source << '\n';
+        } else source << "1 0 0 0\n";
+        source << "$EndNodes\n$Elements\n" << input_tags.size() << '\n';
+        std::int32_t id = 0;
+        for (const auto& tags : input_tags) {
+            ++id;
+            const auto num_tags = static_cast<std::int32_t>(tags.size());
+            if (input_encoding) {
+                integer(15); integer(1); integer(num_tags); integer(id);
+                for (auto tag : tags) integer(tag);
+                integer(1);
+            } else {
+                source << id << " 15 " << num_tags << ' ';
+                for (auto tag : tags) source << tag << ' ';
+                source << "1\n";
+            }
+        }
+        source << "\n$EndElements\n";
+        std::istringstream in(source.str());
+        auto spec = load_msh(in);
+        validate_spec(spec);
+        REQUIRE(spec.entities.points.size() == 2);
+        REQUIRE(spec.entities.points[0].tag == 0);
+        REQUIRE(spec.entities.points[0].physical_group_tags == std::vector<std::int32_t>{5});
+        REQUIRE(spec.entities.points[1].tag == 9);
+        REQUIRE(spec.entities.points[1].physical_group_tags == std::vector<std::int32_t>{7, 8});
+        REQUIRE(spec.elements.entity_blocks[0].num_elements_in_block == 2);
+        for (std::int32_t output_encoding : {0, 1}) {
+            CAPTURE(output_encoding);
+            spec.mesh_format.file_type = output_encoding;
+            std::ostringstream out;
+            save_msh(out, spec);
+            REQUIRE(legacy_wire_tags(out.str(), output_encoding != 0) == expected);
+            std::istringstream saved(out.str());
+            const auto actual = load_msh(saved);
+            validate_spec(actual);
+            REQUIRE(actual.elements.num_elements == input_tags.size());
+            REQUIRE(actual.entities.points.size() == 2);
+            REQUIRE(actual.physical_groups.size() == 2);
+            REQUIRE(actual.entities.points[1].physical_group_tags ==
+                std::vector<std::int32_t>{7, 8});
+            REQUIRE(actual.physical_groups[0].name == "first");
+            REQUIRE(actual.physical_groups[1].name == "second");
+        }
+    }
+}
+
+TEST_CASE("MSH 2.2 derives physical tags from dimension-specific entities", "[io][v22]")
+{
+    using namespace mshio;
+    MshSpec spec;
+    spec.mesh_format.version = "2.2";
+    spec.nodes = {1, 4, 1, 4, {{3, 9, 0, 4, {1, 2, 3, 4},
+        {0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1}}}};
+    spec.elements = {4, 4, 1, 4, {
+        {0, 9, 15, 1, {1, 1}}, {1, 9, 1, 1, {2, 1, 2}},
+        {2, 9, 2, 1, {3, 1, 2, 3}}, {3, 9, 4, 1, {4, 1, 2, 3, 4}}}};
+    spec.entities.points.resize(1);
+    spec.entities.points[0].tag = 9;
+    spec.entities.points[0].physical_group_tags = {7};
+    spec.entities.curves.resize(1);
+    spec.entities.curves[0].tag = 9;
+    spec.entities.curves[0].physical_group_tags = {8};
+    spec.entities.surfaces.resize(1);
+    spec.entities.surfaces[0].tag = 9;
+    spec.entities.surfaces[0].physical_group_tags = {10};
+    // No volume entity: absence of a physical group must be encoded as zero.
+    const std::vector<std::vector<std::int32_t>> expected = {{7, 9}, {8, 9}, {10, 9}, {0, 9}};
+    for (std::int32_t encoding : {0, 1}) {
+        CAPTURE(encoding);
+        spec.mesh_format.file_type = encoding;
+        std::ostringstream out;
+        save_msh(out, spec);
+        REQUIRE(legacy_wire_tags(out.str(), encoding != 0) == expected);
+        auto ambiguous = spec;
+        ambiguous.entities.points[0].physical_group_tags = {7, 11};
+        std::ostringstream rejected;
+        REQUIRE_THROWS_AS(save_msh(rejected, ambiguous), mshio::UnsupportedFeature);
+        ambiguous.elements.entity_blocks[0].legacy_tags = {11, 9, 1, -2};
+        ambiguous.elements.entity_blocks[0].entity_tag = 12;
+        std::ostringstream selected;
+        save_msh(selected, ambiguous);
+        auto selected_expected = expected;
+        selected_expected[0] = {11, 12, 1, -2};
+        REQUIRE(legacy_wire_tags(selected.str(), encoding != 0) == selected_expected);
+    }
+}

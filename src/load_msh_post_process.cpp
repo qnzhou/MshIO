@@ -79,12 +79,14 @@ void regroup_elements_into_blocks(MshSpec& spec)
     std::int32_t curr_dim = 0, curr_tag = 0, curr_element_type = 0;
     for (auto& block : elements.entity_blocks) {
         if (element_blocks.empty() || block.entity_dim != curr_dim || block.entity_tag != curr_tag ||
-            block.element_type != curr_element_type) {
+            block.element_type != curr_element_type ||
+            block.legacy_tags != element_blocks.back().legacy_tags) {
             element_blocks.emplace_back();
             auto& curr_block = element_blocks.back();
             curr_block.entity_dim = block.entity_dim;
             curr_block.entity_tag = block.entity_tag;
             curr_block.element_type = block.element_type;
+            curr_block.legacy_tags = std::move(block.legacy_tags);
 
             curr_dim = block.entity_dim;
             curr_tag = block.entity_tag;

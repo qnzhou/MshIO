@@ -10,6 +10,8 @@
 #include "save_msh_patches.h"
 #include "save_msh_physical_groups.h"
 #include "save_msh_nanospline_format.h"
+#include "msh_topology_io.h"
+#include "msh_extra_sections_io.h"
 
 #include <cassert>
 #include <fstream>
@@ -40,12 +42,17 @@ void save_msh(std::ostream& out, const MshSpec& spec)
     if (!spec.entities.empty()) {
         save_entities(out, spec);
     }
+    save_partitioned_entities(out, spec);
     if (spec.nodes.num_nodes > 0) {
         save_nodes(out, spec);
     }
     if (spec.elements.num_elements > 0) {
         save_elements(out, spec);
     }
+    save_periodic(out, spec);
+    save_ghost_elements(out, spec);
+    save_parametrizations(out, spec);
+    save_interpolation_schemes(out, spec);
     if (spec.node_data.size() > 0) {
         save_node_data(out, spec);
     }

@@ -1,5 +1,7 @@
 #include "element_utils.h"
 #include "io_utils.h"
+#include "msh_topology_io.h"
+#include "msh_extra_sections_io.h"
 #include <mshio/MshSpec.h>
 #include <mshio/exception.h>
 
@@ -12,6 +14,9 @@ namespace mshio {
 
 void validate_spec(const MshSpec& spec)
 {
+    validate_topology_sections(spec);
+    validate_extra_sections(spec);
+
     const Nodes& nodes = spec.nodes;
     const Elements& elements = spec.elements;
 

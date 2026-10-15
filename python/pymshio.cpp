@@ -10,6 +10,8 @@
 #include <cstdint>
 #include <cstring>
 #include <memory>
+#include "bind_msh_topology.h"
+#include "bind_msh_extra_sections.h"
 
 namespace nb = nanobind;
 
@@ -301,6 +303,9 @@ NB_MODULE(pymshio, m)
         });
     nb::bind_vector<std::vector<mshio::PhysicalGroup>>(m, "PhysicalGroups");
 
+    bind_msh_topology(m);
+    bind_msh_extra_sections(m);
+
     nb::class_<mshio::MshSpec>(m, "MshSpec")
         .def(nb::init<>())
         .def_rw("mesh_format", &mshio::MshSpec::mesh_format)
@@ -311,6 +316,11 @@ NB_MODULE(pymshio, m)
         .def_rw("node_data", &mshio::MshSpec::node_data)
         .def_rw("element_data", &mshio::MshSpec::element_data)
         .def_rw("element_node_data", &mshio::MshSpec::element_node_data)
+        .def_rw("partitioned_entities", &mshio::MshSpec::partitioned_entities)
+        .def_rw("periodic_links", &mshio::MshSpec::periodic_links)
+        .def_rw("ghost_elements", &mshio::MshSpec::ghost_elements)
+        .def_rw("parametrizations", &mshio::MshSpec::parametrizations)
+        .def_rw("interpolation_schemes", &mshio::MshSpec::interpolation_schemes)
         .def("__repr__", [](const mshio::MshSpec& self) {
             return "MshSpec(version=" + self.mesh_format.version +
                    ", file_type=" + std::to_string(self.mesh_format.file_type) +

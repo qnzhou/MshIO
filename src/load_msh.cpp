@@ -11,6 +11,8 @@
 #include "load_msh_patches.h"
 #include "load_msh_physical_groups.h"
 #include "load_msh_post_process.h"
+#include "msh_topology_io.h"
+#include "msh_extra_sections_io.h"
 
 #include <cassert>
 #include <fstream>
@@ -40,12 +42,22 @@ MshSpec load_msh(std::istream& in)
             load_mesh_format(in, spec);
         } else if (buf == "$Entities") {
             load_entities(in, spec);
+        } else if (buf == "$PartitionedEntities") {
+            load_partitioned_entities(in, spec);
         } else if (buf == "$PhysicalNames") {
             load_physical_groups(in, spec);
         } else if (buf == "$Nodes") {
             load_nodes(in, spec);
         } else if (buf == "$Elements") {
             load_elements(in, spec);
+        } else if (buf == "$Periodic") {
+            load_periodic(in, spec);
+        } else if (buf == "$GhostElements") {
+            load_ghost_elements(in, spec);
+        } else if (buf == "$Parametrizations") {
+            load_parametrizations(in, spec);
+        } else if (buf == "$InterpolationScheme") {
+            load_interpolation_scheme(in, spec);
         } else if (buf == "$NodeData") {
             load_node_data(in, spec);
         } else if (buf == "$ElementData") {

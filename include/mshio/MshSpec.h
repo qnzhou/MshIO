@@ -6,6 +6,8 @@
 #include <vector>
 
 #include <mshio/MshSpecExt.h>
+#include <mshio/MshSpecTopology.h>
+#include <mshio/MshSpecExtraSections.h>
 
 namespace mshio {
 // MSH 4.1 format counts and identifiers are uint64_t, independently of the host ABI.
@@ -159,6 +161,11 @@ struct MshSpec
     std::vector<Data> node_data;
     std::vector<Data> element_data;
     std::vector<Data> element_node_data;
+    PartitionedEntities partitioned_entities;
+    std::vector<PeriodicLink> periodic_links;
+    std::vector<GhostElement> ghost_elements;
+    Parametrizations parametrizations;
+    std::vector<InterpolationScheme> interpolation_schemes;
 
     // Custom sections
     NanoSplineFormat nanospline_format;

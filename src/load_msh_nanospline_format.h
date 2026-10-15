@@ -4,12 +4,11 @@
 
 #include <istream>
 
-namespace mshio
-{
+namespace mshio {
 
 inline void load_nanospline_format(std::istream& in, MshSpec& spec)
 {
     in >> spec.nanospline_format.version;
 }
 
-}
+} // namespace mshio

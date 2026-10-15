@@ -1,8 +1,8 @@
 #include "load_msh_nodes.h"
-#include "io_utils.h"
 #include <mshio/MshSpec.h>
 #include <algorithm>
 #include <limits>
+#include "io_utils.h"
 
 namespace mshio {
 void load_nodes(std::istream& in, MshSpec& spec)
@@ -50,8 +50,10 @@ void load_nodes(std::istream& in, MshSpec& spec)
             std::int32_t tag;
             double xyz[3];
             read_field(in, tag, binary);
-            if (binary) read_binary(in, xyz, 3);
-            else for (auto& value : xyz) read_ascii(in, value);
+            if (binary)
+                read_binary(in, xyz, 3);
+            else
+                for (auto& value : xyz) read_ascii(in, value);
             reserve_next(block.tags, n);
             reserve_next(block.data, entries, 3);
             block.tags.push_back(nonnegative(tag));

@@ -17,8 +17,9 @@ void load_patches(std::istream& in, MshSpec& spec)
         read_ascii(in, patch.num_u_knots);
         read_ascii(in, patch.num_v_knots);
         read_ascii(in, patch.with_weights);
-        const auto entries = checked_sum(checked_product(patch.num_control_points,
-            patch.with_weights > 0 ? 4 : 3), checked_sum(patch.num_u_knots, patch.num_v_knots));
+        const auto entries = checked_sum(
+            checked_product(patch.num_control_points, patch.with_weights > 0 ? 4 : 3),
+            checked_sum(patch.num_u_knots, patch.num_v_knots));
         if (binary) eat_white_space(in, 1);
         read_values(in, patch.data, entries, binary);
     });

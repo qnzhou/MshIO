@@ -11,21 +11,20 @@ namespace mshio {
 
 namespace internal {
 
-void save_data(std::ostream& out,
+void save_data(
+    std::ostream& out,
     const Data& data,
     const std::string& version,
     bool is_binary,
     bool is_element_node_data)
 {
-    if (version != "4.1" && version != "2.2")
-        throw InvalidFormat("Unsupported version " + version);
+    if (version != "4.1" && version != "2.2") throw InvalidFormat("Unsupported version " + version);
     checked_int32(data.header.string_tags.size());
     checked_int32(data.header.real_tags.size());
     checked_int32(data.header.int_tags.size());
     const auto fields = data.header.int_tags.size() > 1 ? nonnegative(data.header.int_tags[1]) : 0;
     const auto count = data.header.int_tags.size() > 2 ? nonnegative(data.header.int_tags[2]) : 0;
-    if (count != data.entries.size())
-        throw InvalidFormat("Inconsistent MSH data entry count");
+    if (count != data.entries.size()) throw InvalidFormat("Inconsistent MSH data entry count");
     for (const auto& entry : data.entries) {
         const auto nodes = is_element_node_data ? nonnegative(entry.num_nodes_per_element) : 1;
         if (entry.data.size() != checked_product(fields, nodes))

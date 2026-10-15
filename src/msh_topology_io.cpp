@@ -1,6 +1,6 @@
 #include "msh_topology_io.h"
-#include "io_utils.h"
 #include <mshio/MshSpec.h>
+#include "io_utils.h"
 
 #include <cctype>
 #include <string>
@@ -13,8 +13,10 @@ namespace {
 template <typename T>
 void save_field(std::ostream& out, const T& value, bool binary)
 {
-    if (binary) write_binary(out, &value);
-    else out << value << ' ';
+    if (binary)
+        write_binary(out, &value);
+    else
+        out << value << ' ';
 }
 
 void load_tags(std::istream& in, std::vector<std::int32_t>& tags, bool binary)
@@ -28,8 +30,10 @@ void save_tags(std::ostream& out, const std::vector<std::int32_t>& tags, bool bi
 {
     const std::uint64_t count = tags.size();
     save_field(out, count, binary);
-    if (binary) write_binary(out, tags.data(), count);
-    else for (auto tag : tags) save_field(out, tag, false);
+    if (binary)
+        write_binary(out, tags.data(), count);
+    else
+        for (auto tag : tags) save_field(out, tag, false);
 }
 
 template <typename Entity>
@@ -83,7 +87,8 @@ void require(bool condition, const char* message)
 
 void validate_partition(std::int32_t partition, std::uint64_t count)
 {
-    require(partition > 0 && static_cast<std::uint64_t>(partition) <= count,
+    require(
+        partition > 0 && static_cast<std::uint64_t>(partition) <= count,
         "Partitioned entity has invalid partition tag");
 }
 
@@ -92,7 +97,8 @@ void validate_partition_entities(const std::vector<Entity>& entities, std::uint6
 {
     for (const auto& entity : entities) {
         require(entity.tag > 0, "Invalid partitioned entity tag");
-        require(entity.parent_dim >= 0 && entity.parent_dim <= 3 && entity.parent_tag >= 0,
+        require(
+            entity.parent_dim >= 0 && entity.parent_dim <= 3 && entity.parent_tag >= 0,
             "Invalid partitioned entity parent");
         for (auto partition : entity.partitions) validate_partition(partition, count);
     }
@@ -118,7 +124,8 @@ void validate_periodic(const std::vector<PeriodicLink>& links, bool legacy)
     for (const auto& link : links) {
         require(link.entity_dim >= 0 && link.entity_dim <= 2, "Invalid periodic entity dimension");
         require(link.slave_tag > 0 && link.master_tag > 0, "Invalid periodic entity tag");
-        require(link.affine_transform.empty() || link.affine_transform.size() == 16,
+        require(
+            link.affine_transform.empty() || link.affine_transform.size() == 16,
             "Periodic affine transformation must contain zero or sixteen values");
         checked_bytes(checked_product(link.node_pairs.size(), 2), sizeof(std::uint64_t));
         if (legacy) checked_int32(link.node_pairs.size());
@@ -213,8 +220,10 @@ void load_periodic(std::istream& in, MshSpec& spec)
     const bool binary = !legacy && spec.mesh_format.file_type == 1;
     if (binary) eat_white_space(in, 1);
     std::uint64_t count;
-    if (legacy) count = load_legacy_count(in);
-    else read_field(in, count, binary);
+    if (legacy)
+        count = load_legacy_count(in);
+    else
+        read_field(in, count, binary);
     read_records(spec.periodic_links, count, [&](PeriodicLink& link) {
         read_field(in, link.entity_dim, binary);
         read_field(in, link.slave_tag, binary);
@@ -225,7 +234,8 @@ void load_periodic(std::istream& in, MshSpec& spec)
             if (in.peek() == 'A') {
                 constexpr char marker[] = "Affine";
                 for (size_t i = 0; i + 1 < sizeof(marker); ++i)
-                    if (in.get() != marker[i]) throw InvalidFormat("Invalid periodic Affine marker");
+                    if (in.get() != marker[i])
+                        throw InvalidFormat("Invalid periodic Affine marker");
                 const auto ch = in.peek();
                 if (ch == std::char_traits<char>::eof() ||
                     !std::isspace(static_cast<unsigned char>(ch)))
@@ -236,11 +246,14 @@ void load_periodic(std::istream& in, MshSpec& spec)
             read_field(in, affine_count, binary);
         }
         if (affine_count != 0 && affine_count != 16)
-            throw InvalidFormat("Periodic affine transformation must contain zero or sixteen values");
+            throw InvalidFormat(
+                "Periodic affine transformation must contain zero or sixteen values");
         read_values(in, link.affine_transform, affine_count, binary);
         std::uint64_t pairs;
-        if (legacy) pairs = load_legacy_count(in);
-        else read_field(in, pairs, binary);
+        if (legacy)
+            pairs = load_legacy_count(in);
+        else
+            read_field(in, pairs, binary);
         checked_bytes(checked_product(pairs, 2), sizeof(std::uint64_t));
         read_records(link.node_pairs, pairs, [&](PeriodicNodePair& pair) {
             if (legacy) {
@@ -341,8 +354,10 @@ void save_periodic(std::ostream& out, const MshSpec& spec)
         } else {
             save_field(out, std::uint64_t(link.affine_transform.size()), binary);
         }
-        if (binary) write_binary(out, link.affine_transform.data(), link.affine_transform.size());
-        else for (auto value : link.affine_transform) save_field(out, value, false);
+        if (binary)
+            write_binary(out, link.affine_transform.data(), link.affine_transform.size());
+        else
+            for (auto value : link.affine_transform) save_field(out, value, false);
         if (!binary && (!legacy || !link.affine_transform.empty())) out << '\n';
         save_field(out, std::uint64_t(link.node_pairs.size()), binary);
         if (!binary) out << '\n';

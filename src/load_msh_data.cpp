@@ -24,14 +24,14 @@ void load_data_header(std::istream& in, DataHeader& header)
     read_values(in, header.int_tags, nonnegative(count), false);
 }
 
-void load_data(std::istream& in,
+void load_data(
+    std::istream& in,
     Data& data,
     const std::string& version,
     bool is_binary,
     bool is_element_node_data = false)
 {
-    if (version != "4.1" && version != "2.2")
-        throw InvalidFormat("Unsupported version " + version);
+    if (version != "4.1" && version != "2.2") throw InvalidFormat("Unsupported version " + version);
     load_data_header(in, data.header);
     // Gmsh defaults omitted component and entry counts to zero.
     const auto fields = data.header.int_tags.size() > 1 ? nonnegative(data.header.int_tags[1]) : 0;

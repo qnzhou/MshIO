@@ -1,6 +1,4 @@
 #include "load_msh_elements.h"
-#include "element_utils.h"
-#include "io_utils.h"
 #include <mshio/MshSpec.h>
 #include <algorithm>
 #include <array>
@@ -8,11 +6,14 @@
 #include <map>
 #include <set>
 #include <utility>
+#include "element_utils.h"
+#include "io_utils.h"
 
 namespace mshio {
 namespace {
 template <typename Entity>
-void create_entities(const std::map<std::int32_t, std::set<std::int32_t>>& tags,
+void create_entities(
+    const std::map<std::int32_t, std::set<std::int32_t>>& tags,
     std::vector<Entity>& entities)
 {
     for (const auto& entry : tags) {
@@ -23,7 +24,7 @@ void create_entities(const std::map<std::int32_t, std::set<std::int32_t>>& tags,
         entity.physical_group_tags.assign(entry.second.begin(), entry.second.end());
     }
 }
-}
+} // namespace
 
 void load_elements(std::istream& in, MshSpec& spec)
 {
@@ -44,9 +45,14 @@ void load_elements(std::istream& in, MshSpec& spec)
             if (block.entity_dim < 0 || block.entity_dim > 3)
                 throw InvalidFormat("Invalid MSH element dimension");
             total = checked_sum(total, block.num_elements_in_block);
-            if (total > elements.num_elements) throw InvalidFormat("Inconsistent MSH element count");
+            if (total > elements.num_elements)
+                throw InvalidFormat("Inconsistent MSH element count");
             const auto stride = nodes_per_element(block.element_type) + 1;
-            read_values(in, block.data, checked_product(block.num_elements_in_block, stride), binary);
+            read_values(
+                in,
+                block.data,
+                checked_product(block.num_elements_in_block, stride),
+                binary);
         });
         if (total != elements.num_elements) throw InvalidFormat("Inconsistent MSH element count");
     } else if (spec.mesh_format.version == "2.2") {
@@ -104,6 +110,7 @@ void load_elements(std::istream& in, MshSpec& spec)
         create_entities(physical_tags[1], spec.entities.curves);
         create_entities(physical_tags[2], spec.entities.surfaces);
         create_entities(physical_tags[3], spec.entities.volumes);
-    } else throw UnsupportedFeature("Unsupported MSH version: " + spec.mesh_format.version);
+    } else
+        throw UnsupportedFeature("Unsupported MSH version: " + spec.mesh_format.version);
 }
 } // namespace mshio

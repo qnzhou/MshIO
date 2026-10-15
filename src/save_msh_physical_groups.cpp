@@ -14,7 +14,7 @@ void save_physical_groups(std::ostream& out, const MshSpec& spec)
     checked_int32(groups.size());
     out << groups.size() << std::endl;
 
-    for (const auto& group: groups) {
+    for (const auto& group : groups) {
         out << group.dim << " ";
         out << group.tag << " ";
         write_quoted_string(out, group.name);

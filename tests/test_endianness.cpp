@@ -1,9 +1,9 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include "../src/load_msh_format.h"
-#include "../src/load_msh_nodes.h"
 #include <mshio/exception.h>
 #include <mshio/mshio.h>
+#include "../src/load_msh_format.h"
+#include "../src/load_msh_nodes.h"
 
 #include <cstdint>
 #include <cstring>
@@ -34,7 +34,9 @@ ByteOrder opposite(ByteOrder order)
 // writers and byte-swapping helpers. Only double's IEEE bit pattern is copied.
 struct Wire
 {
-    explicit Wire(ByteOrder order_) : order(order_) {}
+    explicit Wire(ByteOrder order_)
+        : order(order_)
+    {}
 
     void integer(std::uint64_t value, unsigned int width)
     {
@@ -60,9 +62,8 @@ struct Wire
 const std::int32_t entity_tag = 0x01020304;
 const std::uint64_t large_node = UINT64_C(4294967306);
 const std::uint64_t large_element = UINT64_C(8589934611);
-const char* interpolation =
-    "\"endian independent basis\"\n1\n2\n2\n2 2\n1 -2.5\n0.125 4\n"
-    "1 2\n-0.75 8\n";
+const char* interpolation = "\"endian independent basis\"\n1\n2\n2\n2 2\n1 -2.5\n0.125 4\n"
+                            "1 2\n-0.75 8\n";
 
 std::uint64_t node_tag(bool modern, unsigned int index)
 {
@@ -84,8 +85,7 @@ std::string mesh_header(const std::string& version, ByteOrder order)
 {
     Wire marker(order);
     marker.i32(1);
-    return "$MeshFormat\n" + version + " 1 8\n" + marker.bytes +
-        "\n$EndMeshFormat\n";
+    return "$MeshFormat\n" + version + " 1 8\n" + marker.bytes + "\n$EndMeshFormat\n";
 }
 
 std::string ascii_header(const std::string& version)
@@ -102,8 +102,7 @@ struct Section
 
     std::string text() const
     {
-        return "$" + name + "\n" + header + payload +
-            (binary ? "\n" : "") + "$End" + name + "\n";
+        return "$" + name + "\n" + header + payload + (binary ? "\n" : "") + "$End" + name + "\n";
     }
 };
 
@@ -202,10 +201,13 @@ Section partitioned_section(ByteOrder order)
 Section periodic_section(bool modern, ByteOrder order)
 {
     if (!modern) {
-        return {"Periodic", "",
+        return {
+            "Periodic",
+            "",
             "1\n1 16909060 16909061\n"
             "Affine 1 0 0 -1.25 0 1 0 2.5 0 0 1 0 0 0 0 1\n"
-            "1\n16909060 16909061\n", false};
+            "1\n16909060 16909061\n",
+            false};
     }
     Wire out(order);
     out.u64(1);
@@ -213,8 +215,7 @@ Section periodic_section(bool modern, ByteOrder order)
     out.i32(16909060);
     out.i32(16909061);
     out.u64(16);
-    for (int i = 0; i < 16; ++i)
-        out.real(i == 3 ? -1.25 : i == 7 ? 2.5 : double(i % 5 == 0));
+    for (int i = 0; i < 16; ++i) out.real(i == 3 ? -1.25 : i == 7 ? 2.5 : double(i % 5 == 0));
     out.u64(1);
     out.u64(node_tag(true, 0));
     out.u64(node_tag(true, 1));
@@ -268,9 +269,12 @@ Section data_section(const std::string& name, ByteOrder order)
         out.real(0.0625);
         out.real(-32.5);
     }
-    return {name,
+    return {
+        name,
         "2\n\"endian view\"\n\"endian independent basis\"\n2\n0.125\n-2.5\n"
-        "4\n16909060\n2\n1\n-7\n", out.bytes, true};
+        "4\n16909060\n2\n1\n-7\n",
+        out.bytes,
+        true};
 }
 
 std::vector<Section> fixture_sections(bool modern, ByteOrder order)
@@ -318,16 +322,17 @@ void require_data(const std::vector<Data>& datasets, bool element_nodes)
 {
     REQUIRE(datasets.size() == 1);
     const auto& data = datasets.at(0);
-    REQUIRE(data.header.string_tags ==
+    REQUIRE(
+        data.header.string_tags ==
         std::vector<std::string>{"endian view", "endian independent basis"});
     REQUIRE(data.header.real_tags == std::vector<double>{0.125, -2.5});
     REQUIRE(data.header.int_tags == std::vector<std::int32_t>{16909060, 2, 1, -7});
     REQUIRE(data.entries.size() == 1);
     REQUIRE(data.entries.at(0).tag == -16909060);
     REQUIRE(data.entries.at(0).num_nodes_per_element == (element_nodes ? 2 : 0));
-    const std::vector<double> expected = element_nodes ?
-        std::vector<double>{-1.25, 8.125, 0.0625, -32.5} :
-        std::vector<double>{-1.25, 8.125};
+    const std::vector<double> expected = element_nodes
+                                             ? std::vector<double>{-1.25, 8.125, 0.0625, -32.5}
+                                             : std::vector<double>{-1.25, 8.125};
     REQUIRE(data.entries.at(0).data == expected);
 }
 
@@ -363,11 +368,12 @@ void require_fixture(const MshSpec& spec, bool modern)
     REQUIRE(element.entity_tag == entity_tag);
     REQUIRE(element.element_type == 1);
     REQUIRE(element.num_elements_in_block == 1);
-    REQUIRE(element.data == std::vector<std::uint64_t>{
-        element_tag(modern), node_tag(modern, 0), node_tag(modern, 1)});
+    REQUIRE(
+        element.data ==
+        std::vector<std::uint64_t>{element_tag(modern), node_tag(modern, 0), node_tag(modern, 1)});
     if (!modern) {
-        REQUIRE(element.legacy_tags ==
-            std::vector<std::int32_t>{71, entity_tag, 2, 1, -16909060, 42});
+        REQUIRE(
+            element.legacy_tags == std::vector<std::int32_t>{71, entity_tag, 2, 1, -16909060, 42});
     }
     REQUIRE(spec.physical_groups.size() == 1);
     REQUIRE(spec.physical_groups.at(0).dim == 1);
@@ -381,7 +387,8 @@ void require_fixture(const MshSpec& spec, bool modern)
     REQUIRE(link.entity_dim == 1);
     REQUIRE(link.slave_tag == 16909060);
     REQUIRE(link.master_tag == 16909061);
-    REQUIRE(link.affine_transform ==
+    REQUIRE(
+        link.affine_transform ==
         std::vector<double>{1, 0, 0, -1.25, 0, 1, 0, 2.5, 0, 0, 1, 0, 0, 0, 0, 1});
     REQUIRE(link.node_pairs.size() == 1);
     REQUIRE(link.node_pairs.at(0).slave_tag == node_tag(modern, 0));
@@ -414,15 +421,18 @@ void require_fixture(const MshSpec& spec, bool modern)
     REQUIRE(spec.entities.curves.at(0).min_x == -2.5);
     REQUIRE(spec.entities.curves.at(0).max_z == 3.75);
     REQUIRE(spec.entities.curves.at(0).physical_group_tags == std::vector<std::int32_t>{72, 82});
-    REQUIRE(spec.entities.curves.at(0).boundary_point_tags ==
+    REQUIRE(
+        spec.entities.curves.at(0).boundary_point_tags ==
         std::vector<std::int32_t>{entity_tag, -16909061});
     REQUIRE(spec.entities.surfaces.at(0).tag == entity_tag + 2);
     REQUIRE(spec.entities.surfaces.at(0).max_z == 3.75);
-    REQUIRE(spec.entities.surfaces.at(0).boundary_curve_tags ==
+    REQUIRE(
+        spec.entities.surfaces.at(0).boundary_curve_tags ==
         std::vector<std::int32_t>{entity_tag + 1, -16909062});
     REQUIRE(spec.entities.volumes.at(0).tag == entity_tag + 3);
     REQUIRE(spec.entities.volumes.at(0).max_z == 3.75);
-    REQUIRE(spec.entities.volumes.at(0).boundary_surface_tags ==
+    REQUIRE(
+        spec.entities.volumes.at(0).boundary_surface_tags ==
         std::vector<std::int32_t>{entity_tag + 2, -16909063});
     const auto& partitions = spec.partitioned_entities;
     REQUIRE(partitions.num_partitions == large_node);
@@ -447,24 +457,28 @@ void require_fixture(const MshSpec& spec, bool modern)
     REQUIRE(partitions.curves.at(0).parent_tag == entity_tag + 1);
     REQUIRE(partitions.curves.at(0).partitions == std::vector<std::int32_t>{1, 2});
     REQUIRE(partitions.curves.at(0).max_z == 1.25);
-    REQUIRE(partitions.curves.at(0).boundary_point_tags ==
+    REQUIRE(
+        partitions.curves.at(0).boundary_point_tags ==
         std::vector<std::int32_t>{16909070, -16909071});
     REQUIRE(partitions.surfaces.at(0).tag == 16909072);
     REQUIRE(partitions.surfaces.at(0).parent_dim == 2);
     REQUIRE(partitions.surfaces.at(0).parent_tag == entity_tag + 2);
     REQUIRE(partitions.surfaces.at(0).max_z == 1.25);
-    REQUIRE(partitions.surfaces.at(0).boundary_curve_tags ==
+    REQUIRE(
+        partitions.surfaces.at(0).boundary_curve_tags ==
         std::vector<std::int32_t>{16909071, -16909072});
     REQUIRE(partitions.volumes.at(0).tag == 16909073);
     REQUIRE(partitions.volumes.at(0).parent_dim == 3);
     REQUIRE(partitions.volumes.at(0).parent_tag == entity_tag + 3);
     REQUIRE(partitions.volumes.at(0).max_z == 1.25);
-    REQUIRE(partitions.volumes.at(0).boundary_surface_tags ==
+    REQUIRE(
+        partitions.volumes.at(0).boundary_surface_tags ==
         std::vector<std::int32_t>{16909072, -16909073});
     REQUIRE(spec.ghost_elements.size() == 1);
     REQUIRE(spec.ghost_elements.at(0).element_tag == large_element);
     REQUIRE(spec.ghost_elements.at(0).partition == 16909060);
-    REQUIRE(spec.ghost_elements.at(0).ghost_partitions ==
+    REQUIRE(
+        spec.ghost_elements.at(0).ghost_partitions ==
         std::vector<std::int32_t>{16909061, 16909062});
     REQUIRE(spec.parametrizations.curves.size() == 1);
     REQUIRE(spec.parametrizations.curves.at(0).tag == 16909060);
@@ -475,7 +489,8 @@ void require_fixture(const MshSpec& spec, bool modern)
     REQUIRE(spec.parametrizations.surfaces.at(0).num_nodes == 3);
     REQUIRE(spec.parametrizations.surfaces.at(0).num_triangles == 1);
     REQUIRE(spec.parametrizations.surfaces.at(0).data == surface_values());
-    REQUIRE(spec.parametrizations.surfaces.at(0).triangle_indices ==
+    REQUIRE(
+        spec.parametrizations.surfaces.at(0).triangle_indices ==
         std::vector<std::int32_t>{0, 2, 1});
 }
 
@@ -495,13 +510,15 @@ void begin_nodes(std::istream& in, MshSpec& spec)
 
 } // namespace
 
-TEST_CASE("Both binary byte orders preserve MSH 2.2 and 4.1 fields and native output",
+TEST_CASE(
+    "Both binary byte orders preserve MSH 2.2 and 4.1 fields and native output",
     "[io][endianness][binary]")
 {
     for (bool modern : {false, true}) {
         for (auto order : {ByteOrder::little, ByteOrder::big}) {
-            INFO("MSH " << (modern ? "4.1" : "2.2") << " little-endian=" <<
-                (order == ByteOrder::little));
+            INFO(
+                "MSH " << (modern ? "4.1" : "2.2")
+                       << " little-endian=" << (order == ByteOrder::little));
             const auto spec = load(fixture(modern, order));
             require_fixture(spec, modern);
             const auto bytes = save(spec);
@@ -521,26 +538,32 @@ TEST_CASE("Both binary byte orders preserve MSH 2.2 and 4.1 fields and native ou
     }
 }
 
-TEST_CASE("Every binary section rejects truncated payloads in either byte order",
+TEST_CASE(
+    "Every binary section rejects truncated payloads in either byte order",
     "[io][endianness][binary][truncated]")
 {
     for (bool modern : {false, true}) {
         for (auto order : {ByteOrder::little, ByteOrder::big}) {
             for (const auto& section : fixture_sections(modern, order)) {
                 if (!section.binary) continue;
-                const auto prefix = mesh_header(modern ? "4.1" : "2.2", order) +
-                    "$" + section.name + "\n" + section.header;
+                const auto prefix = mesh_header(modern ? "4.1" : "2.2", order) + "$" +
+                                    section.name + "\n" + section.header;
                 for (size_t length = 0; length < section.payload.size(); ++length) {
-                    INFO("MSH " << (modern ? "4.1" : "2.2") << " section=" << section.name <<
-                        " little-endian=" << (order == ByteOrder::little) << " length=" << length);
-                    REQUIRE_THROWS_AS(load(prefix + section.payload.substr(0, length)), InvalidFormat);
+                    INFO(
+                        "MSH " << (modern ? "4.1" : "2.2") << " section=" << section.name
+                               << " little-endian=" << (order == ByteOrder::little)
+                               << " length=" << length);
+                    REQUIRE_THROWS_AS(
+                        load(prefix + section.payload.substr(0, length)),
+                        InvalidFormat);
                 }
             }
         }
     }
 }
 
-TEST_CASE("Binary MeshFormat rejects invalid and incomplete byte-order sentinels",
+TEST_CASE(
+    "Binary MeshFormat rejects invalid and incomplete byte-order sentinels",
     "[io][endianness][binary][invalid]")
 {
     for (const std::string version : {"2.2", "4.1"}) {
@@ -549,32 +572,38 @@ TEST_CASE("Binary MeshFormat rejects invalid and incomplete byte-order sentinels
                 Wire out(order);
                 out.i32(marker);
                 INFO("MSH " << version << " invalid marker=" << marker);
-                REQUIRE_THROWS_AS(load("$MeshFormat\n" + version + " 1 8\n" + out.bytes +
-                    "\n$EndMeshFormat\n"), InvalidFormat);
+                REQUIRE_THROWS_AS(
+                    load("$MeshFormat\n" + version + " 1 8\n" + out.bytes + "\n$EndMeshFormat\n"),
+                    InvalidFormat);
             }
             Wire valid(order);
             valid.i32(1);
             for (size_t length = 0; length < valid.bytes.size(); ++length) {
-                REQUIRE_THROWS_AS(load("$MeshFormat\n" + version + " 1 8\n" +
-                    valid.bytes.substr(0, length)), InvalidFormat);
+                REQUIRE_THROWS_AS(
+                    load("$MeshFormat\n" + version + " 1 8\n" + valid.bytes.substr(0, length)),
+                    InvalidFormat);
             }
         }
     }
 }
 
-TEST_CASE("A valid sentinel does not excuse a payload in the opposite byte order",
+TEST_CASE(
+    "A valid sentinel does not excuse a payload in the opposite byte order",
     "[io][endianness][binary][invalid]")
 {
     for (auto order : {ByteOrder::little, ByteOrder::big}) {
         // Swapped uint64 block counts and int32 block sizes must not be accepted.
-        REQUIRE_THROWS_AS(load(mesh_header("4.1", order) +
-            nodes_section(true, opposite(order)).text()), InvalidFormat);
-        REQUIRE_THROWS_AS(load(mesh_header("2.2", order) +
-            elements_section(false, opposite(order)).text()), InvalidFormat);
+        REQUIRE_THROWS_AS(
+            load(mesh_header("4.1", order) + nodes_section(true, opposite(order)).text()),
+            InvalidFormat);
+        REQUIRE_THROWS_AS(
+            load(mesh_header("2.2", order) + elements_section(false, opposite(order)).text()),
+            InvalidFormat);
     }
 }
 
-TEST_CASE("A new MeshFormat replaces byte order on a reused public input stream",
+TEST_CASE(
+    "A new MeshFormat replaces byte order on a reused public input stream",
     "[io][endianness][binary][streams]")
 {
     for (bool modern : {false, true}) {
@@ -585,8 +614,9 @@ TEST_CASE("A new MeshFormat replaces byte order on a reused public input stream"
             in.str(fixture(modern, order));
             require_fixture(load_msh(in), modern);
             in.clear();
-            in.str(ascii_header(version) + "$NodeData\n0\n1\n0.125\n3\n7\n1\n1\n"
-                "16909060 -2.5\n$EndNodeData\n");
+            in.str(
+                ascii_header(version) + "$NodeData\n0\n1\n0.125\n3\n7\n1\n1\n"
+                                        "16909060 -2.5\n$EndNodeData\n");
             const auto ascii = load_msh(in);
             REQUIRE(ascii.mesh_format.file_type == 0);
             REQUIRE(ascii.node_data.at(0).header.real_tags == std::vector<double>{0.125});
@@ -595,11 +625,11 @@ TEST_CASE("A new MeshFormat replaces byte order on a reused public input stream"
         }
         // Also encounter new headers without changing the underlying stream buffer.
         const auto bytes = mesh_header(version, opposite(native_order())) +
-            data_section("NodeData", opposite(native_order())).text() +
-            ascii_header(version) +
-            "$ElementData\n0\n0\n3\n0\n1\n1\n16909060 2.5\n$EndElementData\n" +
-            mesh_header(version, native_order()) +
-            data_section("ElementNodeData", native_order()).text();
+                           data_section("NodeData", opposite(native_order())).text() +
+                           ascii_header(version) +
+                           "$ElementData\n0\n0\n3\n0\n1\n1\n16909060 2.5\n$EndElementData\n" +
+                           mesh_header(version, native_order()) +
+                           data_section("ElementNodeData", native_order()).text();
         in.clear();
         in.str(bytes);
         const auto switched = load_msh(in);
@@ -610,20 +640,23 @@ TEST_CASE("A new MeshFormat replaces byte order on a reused public input stream"
     }
 }
 
-TEST_CASE("Interleaved input streams retain independent binary byte orders",
+TEST_CASE(
+    "Interleaved input streams retain independent binary byte orders",
     "[io][endianness][binary][streams]")
 {
     for (bool modern : {false, true}) {
         const std::string version = modern ? "4.1" : "2.2";
         for (auto first_order : {ByteOrder::little, ByteOrder::big}) {
-            std::istringstream first(mesh_header(version, first_order) +
-                nodes_section(modern, first_order).text());
-            std::istringstream second(mesh_header(version, opposite(first_order)) +
+            std::istringstream first(
+                mesh_header(version, first_order) + nodes_section(modern, first_order).text());
+            std::istringstream second(
+                mesh_header(version, opposite(first_order)) +
                 nodes_section(modern, opposite(first_order)).text());
-            std::istringstream ascii(ascii_header(version) +
+            std::istringstream ascii(
+                ascii_header(version) +
                 (modern ? "$Nodes\n1 2 4294967306 4294967307\n1 16909060 1 2\n"
-                    "4294967306 4294967307\n1.25 -2.5 0.125 0.75\n-4.5 8.25 16.125 -0.25\n" :
-                    "$Nodes\n2\n16909060 1.25 -2.5 0.125\n16909061 -4.5 8.25 16.125\n"));
+                          "4294967306 4294967307\n1.25 -2.5 0.125 0.75\n-4.5 8.25 16.125 -0.25\n"
+                        : "$Nodes\n2\n16909060 1.25 -2.5 0.125\n16909061 -4.5 8.25 16.125\n"));
             MshSpec a, b, c;
             begin_nodes(first, a);
             begin_nodes(second, b);
@@ -635,7 +668,8 @@ TEST_CASE("Interleaved input streams retain independent binary byte orders",
             if (!modern) {
                 REQUIRE(a.nodes.entity_blocks.at(0).entity_dim == 0);
                 REQUIRE(b.nodes.entity_blocks.at(0).entity_tag == 0);
-                REQUIRE(a.nodes.entity_blocks.at(0).tags ==
+                REQUIRE(
+                    a.nodes.entity_blocks.at(0).tags ==
                     std::vector<std::uint64_t>{node_tag(false, 0), node_tag(false, 1)});
                 REQUIRE(b.nodes.entity_blocks.at(0).tags == a.nodes.entity_blocks.at(0).tags);
                 REQUIRE(a.nodes.entity_blocks.at(0).data == node_values(false));

@@ -1,20 +1,19 @@
 #include "save_msh_elements.h"
-#include "element_utils.h"
-#include "io_utils.h"
 #include <mshio/MshSpec.h>
 #include <algorithm>
 #include <map>
 #include <utility>
+#include "element_utils.h"
+#include "io_utils.h"
 
 
 namespace mshio {
 namespace {
-using PhysicalTags = std::map<std::pair<std::int32_t, std::int32_t>,
-    const std::vector<std::int32_t>*>;
+using PhysicalTags =
+    std::map<std::pair<std::int32_t, std::int32_t>, const std::vector<std::int32_t>*>;
 
 template <typename Entity>
-void index_physical_tags(PhysicalTags& tags, std::int32_t dim,
-    const std::vector<Entity>& entities)
+void index_physical_tags(PhysicalTags& tags, std::int32_t dim, const std::vector<Entity>& entities)
 {
     for (const auto& entity : entities)
         tags.emplace(std::make_pair(dim, entity.tag), &entity.physical_group_tags);
@@ -29,12 +28,12 @@ std::int32_t physical_tag(const PhysicalTags& tags, const ElementBlock& block)
         if (tag == 0) continue;
         if (physical != 0 && physical != tag)
             throw UnsupportedFeature("MSH 2.2 requires one physical tag per element; "
-                "set ElementBlock::legacy_tags to select its physical group");
+                                     "set ElementBlock::legacy_tags to select its physical group");
         physical = tag;
     }
     return physical;
 }
-}
+} // namespace
 
 void save_elements(std::ostream& out, const MshSpec& spec)
 {
@@ -64,10 +63,12 @@ void save_elements(std::ostream& out, const MshSpec& spec)
     if (total != elements.num_elements) throw InvalidFormat("Inconsistent MSH element count");
     if (!v41) checked_int32(elements.num_elements);
     PhysicalTags physical_tags;
-    if (!v41 && std::any_of(elements.entity_blocks.begin(), elements.entity_blocks.end(),
-        [](const ElementBlock& block) {
-            return block.num_elements_in_block != 0 && block.legacy_tags.empty();
-        })) {
+    if (!v41 && std::any_of(
+                    elements.entity_blocks.begin(),
+                    elements.entity_blocks.end(),
+                    [](const ElementBlock& block) {
+                        return block.num_elements_in_block != 0 && block.legacy_tags.empty();
+                    })) {
         index_physical_tags(physical_tags, 0, spec.entities.points);
         index_physical_tags(physical_tags, 1, spec.entities.curves);
         index_physical_tags(physical_tags, 2, spec.entities.surfaces);
@@ -82,7 +83,8 @@ void save_elements(std::ostream& out, const MshSpec& spec)
     } else if (v41) {
         out << elements.num_entity_blocks << ' ' << elements.num_elements << ' '
             << elements.min_element_tag << ' ' << elements.max_element_tag << '\n';
-    } else out << elements.num_elements << '\n';
+    } else
+        out << elements.num_elements << '\n';
     for (const auto& block : elements.entity_blocks) {
         if (!v41 && block.num_elements_in_block == 0) continue;
         const auto stride = nodes_per_element(block.element_type) + 1;
@@ -97,10 +99,12 @@ void save_elements(std::ostream& out, const MshSpec& spec)
                 !v41 && block.legacy_tags.empty() ? physical_tag(physical_tags, block) : 0,
                 block.entity_tag};
             const auto* tags = block.legacy_tags.empty() ? derived_tags : block.legacy_tags.data();
-            const auto num_tags = block.legacy_tags.empty() ? std::int32_t(2) :
-                checked_int32(block.legacy_tags.size());
-            if (v41) out << block.entity_dim << ' ' << block.entity_tag << ' '
-                << block.element_type << ' ' << block.num_elements_in_block << '\n';
+            const auto num_tags = block.legacy_tags.empty()
+                                      ? std::int32_t(2)
+                                      : checked_int32(block.legacy_tags.size());
+            if (v41)
+                out << block.entity_dim << ' ' << block.entity_tag << ' ' << block.element_type
+                    << ' ' << block.num_elements_in_block << '\n';
             if (!v41 && binary) {
                 const auto count = checked_int32(block.num_elements_in_block);
                 // Every element in a block has the same legacy metadata.
@@ -122,9 +126,8 @@ void save_elements(std::ostream& out, const MshSpec& spec)
                     }
                 } else {
                     if (!v41) {
-                        out << checked_int32(block.data[i * stride]) << ' '
-                            << block.element_type << ' ' << num_tags << ' '
-                            << tags[0] << ' ' << block.entity_tag << ' ';
+                        out << checked_int32(block.data[i * stride]) << ' ' << block.element_type
+                            << ' ' << num_tags << ' ' << tags[0] << ' ' << block.entity_tag << ' ';
                         for (std::int32_t j = 2; j < num_tags; ++j) out << tags[j] << ' ';
                     }
                     for (size_t k = v41 ? 0 : 1; k < stride; ++k)

@@ -6,15 +6,16 @@
 #include <vector>
 
 #include <mshio/MshSpecExt.h>
-#include <mshio/MshSpecTopology.h>
 #include <mshio/MshSpecExtraSections.h>
+#include <mshio/MshSpecTopology.h>
 
 namespace mshio {
 // MSH 4.1 format counts and identifiers are uint64_t, independently of the host ABI.
 // Container allocation sizes and indices remain host size_t and must fit in memory.
 static_assert(sizeof(std::uint64_t) == 8, "MSH requires eight-byte unsigned integers");
 static_assert(sizeof(std::int32_t) == 4, "MSH requires four-byte signed integers");
-static_assert(sizeof(double) == 8 && std::numeric_limits<double>::is_iec559,
+static_assert(
+    sizeof(double) == 8 && std::numeric_limits<double>::is_iec559,
     "MSH requires eight-byte IEEE 754 doubles");
 
 
@@ -88,7 +89,8 @@ struct Data
     std::vector<DataEntry> entries;
 };
 
-struct PointEntity {
+struct PointEntity
+{
     std::int32_t tag = 0;
     double x = 0.0;
     double y = 0.0;
@@ -96,7 +98,8 @@ struct PointEntity {
     std::vector<std::int32_t> physical_group_tags;
 };
 
-struct CurveEntity {
+struct CurveEntity
+{
     std::int32_t tag = 0;
     double min_x = 0.0;
     double min_y = 0.0;
@@ -108,7 +111,8 @@ struct CurveEntity {
     std::vector<std::int32_t> boundary_point_tags;
 };
 
-struct SurfaceEntity {
+struct SurfaceEntity
+{
     std::int32_t tag = 0;
     double min_x = 0.0;
     double min_y = 0.0;
@@ -120,7 +124,8 @@ struct SurfaceEntity {
     std::vector<std::int32_t> boundary_curve_tags;
 };
 
-struct VolumeEntity {
+struct VolumeEntity
+{
     std::int32_t tag = 0;
     double min_x = 0.0;
     double min_y = 0.0;
@@ -132,15 +137,17 @@ struct VolumeEntity {
     std::vector<std::int32_t> boundary_surface_tags;
 };
 
-struct Entities {
+struct Entities
+{
     std::vector<PointEntity> points;
     std::vector<CurveEntity> curves;
     std::vector<SurfaceEntity> surfaces;
     std::vector<VolumeEntity> volumes;
 
-    bool empty() const {
-        return points.size() == 0 && curves.size() == 0 && surfaces.size() == 0
-            && volumes.size() == 0;
+    bool empty() const
+    {
+        return points.size() == 0 && curves.size() == 0 && surfaces.size() == 0 &&
+               volumes.size() == 0;
     }
 };
 

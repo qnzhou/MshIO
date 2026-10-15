@@ -6,12 +6,14 @@
 namespace mshio {
 
 // Ghost entity metadata uses signed 32-bit entity and partition tags, not mesh tags.
-struct GhostEntity {
+struct GhostEntity
+{
     std::int32_t tag = 0;
     std::int32_t partition = 0;
 };
 
-struct PartitionedPointEntity {
+struct PartitionedPointEntity
+{
     std::int32_t tag = 0;
     std::int32_t parent_dim = 0;
     std::int32_t parent_tag = 0;
@@ -22,7 +24,8 @@ struct PartitionedPointEntity {
     std::vector<std::int32_t> physical_group_tags;
 };
 
-struct PartitionedCurveEntity {
+struct PartitionedCurveEntity
+{
     std::int32_t tag = 0;
     std::int32_t parent_dim = 0;
     std::int32_t parent_tag = 0;
@@ -37,7 +40,8 @@ struct PartitionedCurveEntity {
     std::vector<std::int32_t> boundary_point_tags;
 };
 
-struct PartitionedSurfaceEntity {
+struct PartitionedSurfaceEntity
+{
     std::int32_t tag = 0;
     std::int32_t parent_dim = 0;
     std::int32_t parent_tag = 0;
@@ -52,7 +56,8 @@ struct PartitionedSurfaceEntity {
     std::vector<std::int32_t> boundary_curve_tags;
 };
 
-struct PartitionedVolumeEntity {
+struct PartitionedVolumeEntity
+{
     std::int32_t tag = 0;
     std::int32_t parent_dim = 0;
     std::int32_t parent_tag = 0;
@@ -67,7 +72,8 @@ struct PartitionedVolumeEntity {
     std::vector<std::int32_t> boundary_surface_tags;
 };
 
-struct PartitionedEntities {
+struct PartitionedEntities
+{
     std::uint64_t num_partitions = 0;
     std::vector<GhostEntity> ghost_entities;
     std::vector<PartitionedPointEntity> points;
@@ -75,18 +81,21 @@ struct PartitionedEntities {
     std::vector<PartitionedSurfaceEntity> surfaces;
     std::vector<PartitionedVolumeEntity> volumes;
 
-    bool empty() const {
-        return num_partitions == 0 && ghost_entities.empty() && points.empty() &&
-            curves.empty() && surfaces.empty() && volumes.empty();
+    bool empty() const
+    {
+        return num_partitions == 0 && ghost_entities.empty() && points.empty() && curves.empty() &&
+               surfaces.empty() && volumes.empty();
     }
 };
 
-struct PeriodicNodePair {
+struct PeriodicNodePair
+{
     std::uint64_t slave_tag = 0;
     std::uint64_t master_tag = 0;
 };
 
-struct PeriodicLink {
+struct PeriodicLink
+{
     std::int32_t entity_dim = 0;
     std::int32_t slave_tag = 0;
     std::int32_t master_tag = 0;
@@ -95,7 +104,8 @@ struct PeriodicLink {
     std::vector<PeriodicNodePair> node_pairs;
 };
 
-struct GhostElement {
+struct GhostElement
+{
     std::uint64_t element_tag = 0;
     std::int32_t partition = 0;
     std::vector<std::int32_t> ghost_partitions;

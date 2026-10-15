@@ -1,17 +1,17 @@
 #include <mshio/MshSpec.h>
 #include <mshio/exception.h>
 
+#include "msh_extra_sections_io.h"
+#include "msh_topology_io.h"
 #include "save_msh_curves.h"
 #include "save_msh_data.h"
 #include "save_msh_elements.h"
 #include "save_msh_entities.h"
 #include "save_msh_format.h"
+#include "save_msh_nanospline_format.h"
 #include "save_msh_nodes.h"
 #include "save_msh_patches.h"
 #include "save_msh_physical_groups.h"
-#include "save_msh_nanospline_format.h"
-#include "msh_topology_io.h"
-#include "msh_extra_sections_io.h"
 
 #include <cassert>
 #include <fstream>
@@ -22,7 +22,8 @@ void save_msh(std::ostream& out, const MshSpec& spec)
 {
     // Gmsh writes ASCII doubles with %.16g, including headers in binary files.
     // Keep this local to the write so caller formatting survives errors too.
-    struct RestoreFormat {
+    struct RestoreFormat
+    {
         std::ostream& stream;
         std::streamsize precision;
         std::ios_base::fmtflags flags;

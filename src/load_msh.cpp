@@ -11,8 +11,8 @@
 #include "load_msh_patches.h"
 #include "load_msh_physical_groups.h"
 #include "load_msh_post_process.h"
-#include "msh_topology_io.h"
 #include "msh_extra_sections_io.h"
+#include "msh_topology_io.h"
 
 #include <cassert>
 #include <fstream>

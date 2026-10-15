@@ -1,12 +1,12 @@
 #include <catch2/catch_test_macros.hpp>
 
-#include "portability_fixture.h"
+#include <mshio/exception.h>
 #include "../src/load_msh_data.h"
 #include "../src/load_msh_elements.h"
 #include "../src/load_msh_entities.h"
 #include "../src/load_msh_format.h"
 #include "../src/load_msh_nodes.h"
-#include <mshio/exception.h>
+#include "portability_fixture.h"
 
 #include <array>
 #include <cstdint>
@@ -21,15 +21,21 @@ namespace {
 
 using namespace mshio;
 
-static_assert(std::is_same<decltype(NodeBlock::tags)::value_type, std::uint64_t>::value,
+static_assert(
+    std::is_same<decltype(NodeBlock::tags)::value_type, std::uint64_t>::value,
     "Node identifiers are format uint64_t, not host size_t");
-static_assert(std::is_same<decltype(ElementBlock::data)::value_type, std::uint64_t>::value,
+static_assert(
+    std::is_same<decltype(ElementBlock::data)::value_type, std::uint64_t>::value,
     "Element identifiers and connectivity are format uint64_t");
-static_assert(std::is_same<decltype(Nodes::num_nodes), std::uint64_t>::value, "Format counts are uint64_t");
-static_assert(std::is_same<decltype(DataEntry::tag), std::int32_t>::value,
+static_assert(
+    std::is_same<decltype(Nodes::num_nodes), std::uint64_t>::value,
+    "Format counts are uint64_t");
+static_assert(
+    std::is_same<decltype(DataEntry::tag), std::int32_t>::value,
     "Postprocessing identifiers remain specification int32_t");
-static_assert(std::is_same<decltype(CurveEntity::boundary_point_tags)::value_type,
-    std::int32_t>::value, "Entity boundaries retain their signed 32-bit width");
+static_assert(
+    std::is_same<decltype(CurveEntity::boundary_point_tags)::value_type, std::int32_t>::value,
+    "Entity boundaries retain their signed 32-bit width");
 
 bool explicit_format_error(const std::string& contents)
 {
@@ -63,8 +69,8 @@ bool explicit_save_error(const MshSpec& spec)
 
 std::string ascii_section(const std::string& section, const std::string& payload)
 {
-    return "$MeshFormat\n4.1 0 8\n$EndMeshFormat\n$" + section + "\n" + payload +
-        "\n$End" + section + "\n";
+    return "$MeshFormat\n4.1 0 8\n$EndMeshFormat\n$" + section + "\n" + payload + "\n$End" +
+           section + "\n";
 }
 
 template <typename T>
@@ -151,20 +157,25 @@ TEST_CASE("Binary wire payloads match independent Gmsh output", "[io][portabilit
 {
     std::ifstream file(MSHIO_DATA_DIR "/portability_4.1_binary.msh", std::ios::binary);
     REQUIRE(file.good());
-    const std::string fixture((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+    const std::string fixture(
+        (std::istreambuf_iterator<char>(file)),
+        std::istreambuf_iterator<char>());
     const auto output = serialized(portability::expected_fixture(), 1);
-    for (const auto* section : {"Entities", "Nodes", "Elements", "NodeData", "ElementData", "ElementNodeData"}) {
+    for (const auto* section :
+         {"Entities", "Nodes", "Elements", "NodeData", "ElementData", "ElementNodeData"}) {
         CAPTURE(section);
         REQUIRE(binary_payload(output, section) == binary_payload(fixture, section));
     }
     const auto sparse = portability::expected_fixture(true);
     std::ostringstream expected_elements;
-    for (const std::uint64_t count : {UINT64_C(1), UINT64_C(2), UINT64_C(13), portability::sparse_element_tag}) {
+    for (const std::uint64_t count :
+         {UINT64_C(1), UINT64_C(2), UINT64_C(13), portability::sparse_element_tag}) {
         binary(expected_elements, count);
     }
     for (const std::int32_t value : {3, 1, 4}) binary(expected_elements, value);
     binary(expected_elements, UINT64_C(2));
-    for (const auto value : sparse.elements.entity_blocks.front().data) binary(expected_elements, value);
+    for (const auto value : sparse.elements.entity_blocks.front().data)
+        binary(expected_elements, value);
     REQUIRE(binary_payload(serialized(sparse, 1), "Elements") == expected_elements.str());
 }
 
@@ -212,13 +223,17 @@ TEST_CASE("Four-byte 4.1 headers fail in ASCII binary and output", "[io][portabi
 TEST_CASE("Truncated binary fields fail explicitly even in Release", "[io][portability][malformed]")
 {
     using Reader = void (*)(std::istream&, MshSpec&);
-    struct Section {
+    struct Section
+    {
         const char* name;
         Reader read;
     };
     const Section sections[] = {
-        {"Entities", load_entities}, {"Nodes", load_nodes}, {"Elements", load_elements},
-        {"NodeData", load_node_data}, {"ElementData", load_element_data},
+        {"Entities", load_entities},
+        {"Nodes", load_nodes},
+        {"Elements", load_elements},
+        {"NodeData", load_node_data},
+        {"ElementData", load_element_data},
         {"ElementNodeData", load_element_node_data},
     };
     const auto contents = serialized(portability::expected_fixture(), 1);
@@ -245,16 +260,19 @@ TEST_CASE("Truncated binary fields fail explicitly even in Release", "[io][porta
     }
 }
 
-TEST_CASE("Impossible counts and allocation products fail before allocation", "[io][portability][malformed]")
+TEST_CASE(
+    "Impossible counts and allocation products fail before allocation",
+    "[io][portability][malformed]")
 {
     REQUIRE(explicit_format_error(ascii_section("Nodes", "18446744073709551615 0 0 0")));
     REQUIRE(explicit_format_error(ascii_section("Elements", "18446744073709551615 0 0 0")));
     REQUIRE(explicit_format_error(ascii_section("Entities", "18446744073709551615 0 0 0")));
-    REQUIRE(explicit_format_error(ascii_section("Nodes",
-        "1 6148914691236517206 1 1\n3 1 1 6148914691236517206")));
-    REQUIRE(explicit_format_error(ascii_section("Elements",
-        "1 2049638230412172402 1 1\n3 1 5 2049638230412172402")));
-    REQUIRE(explicit_format_error(ascii_section("ElementNodeData",
+    REQUIRE(explicit_format_error(
+        ascii_section("Nodes", "1 6148914691236517206 1 1\n3 1 1 6148914691236517206")));
+    REQUIRE(explicit_format_error(
+        ascii_section("Elements", "1 2049638230412172402 1 1\n3 1 5 2049638230412172402")));
+    REQUIRE(explicit_format_error(ascii_section(
+        "ElementNodeData",
         "1\n\"oversized\"\n0\n3\n0\n2147483647\n1\n1 2147483647")));
     for (const auto* section : {"Nodes", "Elements", "Entities"}) {
         auto out = binary_section(section);
@@ -264,14 +282,18 @@ TEST_CASE("Impossible counts and allocation products fail before allocation", "[
     }
     {
         auto out = binary_section("Nodes");
-        for (std::uint64_t count : {UINT64_C(1), UINT64_C(6148914691236517206), UINT64_C(1), UINT64_C(1)}) binary(out, count);
+        for (std::uint64_t count :
+             {UINT64_C(1), UINT64_C(6148914691236517206), UINT64_C(1), UINT64_C(1)})
+            binary(out, count);
         for (std::int32_t value : {3, 1, 1}) binary(out, value);
         binary(out, UINT64_C(6148914691236517206));
         REQUIRE(explicit_format_error(out.str()));
     }
     {
         auto out = binary_section("Elements");
-        for (std::uint64_t count : {UINT64_C(1), UINT64_C(2049638230412172402), UINT64_C(1), UINT64_C(1)}) binary(out, count);
+        for (std::uint64_t count :
+             {UINT64_C(1), UINT64_C(2049638230412172402), UINT64_C(1), UINT64_C(1)})
+            binary(out, count);
         for (std::int32_t value : {3, 1, 5}) binary(out, value);
         binary(out, UINT64_C(2049638230412172402));
         REQUIRE(explicit_format_error(out.str()));
@@ -285,13 +307,15 @@ TEST_CASE("Impossible counts and allocation products fail before allocation", "[
     }
     {
         auto out = binary_section("Entities");
-        for (std::uint64_t count : {UINT64_C(1), UINT64_C(0), UINT64_C(0), UINT64_C(0)}) binary(out, count);
+        for (std::uint64_t count : {UINT64_C(1), UINT64_C(0), UINT64_C(0), UINT64_C(0)})
+            binary(out, count);
         binary(out, std::int32_t(1));
         for (int i = 0; i < 3; ++i) binary(out, 0.0);
         binary(out, std::numeric_limits<std::uint64_t>::max());
         REQUIRE(explicit_format_error(out.str()));
     }
-    REQUIRE(explicit_format_error(ascii_section("Entities", "1 0 0 0\n1 0 0 0 18446744073709551615")));
+    REQUIRE(
+        explicit_format_error(ascii_section("Entities", "1 0 0 0\n1 0 0 0 18446744073709551615")));
     REQUIRE(explicit_format_error(ascii_section("NodeData", "18446744073709551615")));
 }
 
@@ -322,22 +346,28 @@ TEST_CASE("Signed entities and all postprocessing retain int32 boundaries", "[io
     for (const auto* section : {"NodeData", "ElementData", "ElementNodeData"}) {
         const std::string nodes = std::string(section) == "ElementNodeData" ? " 1" : "";
         for (const auto* tag : {"2147483648", "-2147483649"}) {
-            REQUIRE(explicit_format_error(ascii_section(section,
+            REQUIRE(explicit_format_error(ascii_section(
+                section,
                 std::string("1\n\"out-of-range\"\n0\n3\n0\n1\n1\n") + tag + nodes + " 0")));
         }
-        REQUIRE(explicit_format_error(ascii_section(section,
-            "1\n\"negative-count\"\n0\n3\n0\n-1\n1")));
+        REQUIRE(
+            explicit_format_error(ascii_section(section, "1\n\"negative-count\"\n0\n3\n0\n-1\n1")));
     }
     REQUIRE(explicit_format_error(ascii_section("Entities", "1 0 0 0\n2147483648 0 0 0 0")));
     REQUIRE(explicit_format_error(ascii_section("Entities", "1 0 0 0\n1 0 0 0 1 2147483648")));
-    REQUIRE(explicit_format_error(ascii_section("Entities", "0 1 0 0\n1 0 0 0 1 1 1 0 1 -2147483649")));
-    REQUIRE(explicit_format_error(ascii_section("ElementNodeData", "1\n\"negative-node-count\"\n0\n3\n0\n1\n1\n1 -1")));
+    REQUIRE(
+        explicit_format_error(ascii_section("Entities", "0 1 0 0\n1 0 0 0 1 1 1 0 1 -2147483649")));
+    REQUIRE(explicit_format_error(
+        ascii_section("ElementNodeData", "1\n\"negative-node-count\"\n0\n3\n0\n1\n1\n1 -1")));
     REQUIRE(explicit_format_error(ascii_section("Nodes", "1 1 1 1\n2 2147483648 0 1\n1\n0 0 0")));
-    REQUIRE(explicit_format_error(ascii_section("Nodes", "1 1 1 1\n2 1 0 1\n18446744073709551616\n0 0 0")));
+    REQUIRE(explicit_format_error(
+        ascii_section("Nodes", "1 1 1 1\n2 1 0 1\n18446744073709551616\n0 0 0")));
     REQUIRE(explicit_format_error(ascii_section("Nodes", "1 1 1 1\n2 1 0 1\n-1\n0 0 0")));
 }
 
-TEST_CASE("MSH 2.2 preserves representable int32 tags and rejects narrowing", "[io][portability][v22]")
+TEST_CASE(
+    "MSH 2.2 preserves representable int32 tags and rejects narrowing",
+    "[io][portability][v22]")
 {
     for (std::int32_t encoding : {0, 1}) {
         CAPTURE(encoding);
@@ -360,7 +390,8 @@ TEST_CASE("MSH 2.2 preserves representable int32 tags and rejects narrowing", "[
         std::istringstream in(out.str());
         const auto actual = load_msh(in);
         REQUIRE(actual.nodes.entity_blocks.front().tags == spec.nodes.entity_blocks.front().tags);
-        REQUIRE(actual.elements.entity_blocks.front().data == spec.elements.entity_blocks.front().data);
+        REQUIRE(
+            actual.elements.entity_blocks.front().data == spec.elements.entity_blocks.front().data);
         auto invalid = spec;
         invalid.nodes.entity_blocks.front().tags.front() = tag + 1;
         invalid.nodes.max_node_tag = tag + 1;
@@ -396,8 +427,7 @@ TEST_CASE("MSH 2.2 roundtrips meshes with empty element blocks", "[io][portabili
     MshSpec spec;
     spec.mesh_format.version = "2.2";
     spec.nodes = {1, 1, 1, 1, {{0, 1, 0, 1, {1}, {0, 0, 0}}}};
-    spec.elements = {3, 1, 1, 1,
-        {{0, 1, 15, 0, {}}, {0, 1, 15, 1, {1, 1}}, {0, 1, 15, 0, {}}}};
+    spec.elements = {3, 1, 1, 1, {{0, 1, 15, 0, {}}, {0, 1, 15, 1, {1, 1}}, {0, 1, 15, 0, {}}}};
     validate_spec(spec);
     for (std::int32_t encoding : {0, 1}) {
         CAPTURE(encoding);
@@ -422,7 +452,8 @@ TEST_CASE("Binary MSH 4.1 accepts trailing MeshFormat whitespace", "[io][portabi
     REQUIRE(spec.mesh_format.file_type == 1);
 }
 
-TEST_CASE("Lone CR before binary MSH 2.2 node data preserves the first tag byte",
+TEST_CASE(
+    "Lone CR before binary MSH 2.2 node data preserves the first tag byte",
     "[io][portability][v22][binary]")
 {
     std::ostringstream out;
@@ -459,7 +490,8 @@ TEST_CASE("save_msh reports a failure deferred until stream synchronization", "[
     REQUIRE_THROWS_AS(save_msh(out, spec), InvalidFormat);
 }
 
-TEST_CASE("MSH ASCII doubles match Gmsh precision without changing stream formatting",
+TEST_CASE(
+    "MSH ASCII doubles match Gmsh precision without changing stream formatting",
     "[io][portability][precision]")
 {
     const double value = 1.2345678901234567;
@@ -468,10 +500,16 @@ TEST_CASE("MSH ASCII doubles match Gmsh precision without changing stream format
     const double time = 0.12345678901234567;
     const std::vector<double> original = {value, small, large};
     const std::vector<double> rounded = {
-        1.234567890123457, 1.234567890123457e-120, 1.234567890123457e120};
+        1.234567890123457,
+        1.234567890123457e-120,
+        1.234567890123457e120};
     MshSpec spec;
-    spec.nodes = {1, 2, 1, 2, {{1, 1, 1, 2, {1, 2},
-        {value, small, large, value, 2, 0, 0, 1.0000000000000002}}}};
+    spec.nodes = {
+        1,
+        2,
+        1,
+        2,
+        {{1, 1, 1, 2, {1, 2}, {value, small, large, value, 2, 0, 0, 1.0000000000000002}}}};
     spec.elements = {1, 1, 1, 1, {{1, 1, 1, 1, {1, 1, 2}}}};
     spec.entities.points = {{1, value, small, large, {}}};
     spec.entities.curves = {{1, small, 0, 0, large, value, 0, {}, {}}};
@@ -515,8 +553,10 @@ TEST_CASE("MSH ASCII doubles match Gmsh precision without changing stream format
                     REQUIRE(loaded.entities.curves[0].min_x == expected[1]);
                     REQUIRE(loaded.entities.curves[0].max_x == expected[2]);
                 }
-                for (const auto* dataset : {&loaded.node_data[0], &loaded.element_data[0],
-                    &loaded.element_node_data[0]}) {
+                for (const auto* dataset :
+                     {&loaded.node_data[0],
+                      &loaded.element_data[0],
+                      &loaded.element_node_data[0]}) {
                     // Dataset headers stay ASCII even in binary MSH files.
                     REQUIRE(dataset->header.real_tags[0] == 0.1234567890123457);
                     const auto& values = dataset->entries[0].data;

@@ -1,14 +1,16 @@
 #include "save_msh_entities.h"
-#include "io_utils.h"
 #include <mshio/MshSpec.h>
+#include "io_utils.h"
 
 namespace mshio {
 namespace {
 template <typename T>
 void save_field(std::ostream& out, const T& value, bool binary)
 {
-    if (binary) write_binary(out, &value);
-    else out << value << ' ';
+    if (binary)
+        write_binary(out, &value);
+    else
+        out << value << ' ';
 }
 
 void save_tags(std::ostream& out, const std::vector<std::int32_t>& tags, bool binary)
@@ -16,8 +18,10 @@ void save_tags(std::ostream& out, const std::vector<std::int32_t>& tags, bool bi
     checked_bytes(tags.size(), sizeof(std::int32_t));
     const std::uint64_t count = tags.size();
     save_field(out, count, binary);
-    if (binary) write_binary(out, tags.data(), count);
-    else for (auto tag : tags) save_field(out, tag, false);
+    if (binary)
+        write_binary(out, tags.data(), count);
+    else
+        for (auto tag : tags) save_field(out, tag, false);
 }
 
 template <typename Entity>
@@ -32,7 +36,7 @@ void save_bounded_entity(std::ostream& out, const Entity& entity, bool binary)
     save_field(out, entity.max_z, binary);
     save_tags(out, entity.physical_group_tags, binary);
 }
-}
+} // namespace
 
 void save_entities(std::ostream& out, const MshSpec& spec)
 {
@@ -42,7 +46,7 @@ void save_entities(std::ostream& out, const MshSpec& spec)
     const bool binary = spec.mesh_format.file_type == 1;
     const auto& entities = spec.entities;
     const std::uint64_t points = entities.points.size(), curves = entities.curves.size(),
-        surfaces = entities.surfaces.size(), volumes = entities.volumes.size();
+                        surfaces = entities.surfaces.size(), volumes = entities.volumes.size();
     out << "$Entities\n";
     save_field(out, points, binary);
     save_field(out, curves, binary);

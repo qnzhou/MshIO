@@ -27,8 +27,11 @@ std::vector<ExpectedElement> expected_elements()
     // Independent family/order formulas from the released Gmsh 4.15.2 registry,
     // rather than a copy of the implementation's type-indexed lookup table.
     std::vector<ExpectedElement> result;
-    auto add_family = [&](std::initializer_list<std::int32_t> types, size_t first_order,
-                          std::int32_t dim, size_t family, bool incomplete) {
+    auto add_family = [&](std::initializer_list<std::int32_t> types,
+                          size_t first_order,
+                          std::int32_t dim,
+                          size_t family,
+                          bool incomplete) {
         size_t order = first_order;
         for (auto type : types) {
             size_t nodes = 0;
@@ -36,14 +39,21 @@ std::vector<ExpectedElement> expected_elements()
             case 1: nodes = order + 1; break;
             case 2: nodes = incomplete ? 3 * order : (order + 1) * (order + 2) / 2; break;
             case 3: nodes = incomplete ? 4 * order : (order + 1) * (order + 1); break;
-            case 4: nodes = incomplete ? 4 + 6 * (order - 1) :
-                (order + 1) * (order + 2) * (order + 3) / 6; break;
-            case 5: nodes = incomplete ? 8 + 12 * (order - 1) :
-                (order + 1) * (order + 1) * (order + 1); break;
-            case 6: nodes = incomplete ? 6 + 9 * (order - 1) :
-                (order + 1) * (order + 1) * (order + 2) / 2; break;
-            case 7: nodes = incomplete ? 5 + 8 * (order - 1) :
-                (order + 1) * (order + 2) * (2 * order + 3) / 6; break;
+            case 4:
+                nodes =
+                    incomplete ? 4 + 6 * (order - 1) : (order + 1) * (order + 2) * (order + 3) / 6;
+                break;
+            case 5:
+                nodes = incomplete ? 8 + 12 * (order - 1) : (order + 1) * (order + 1) * (order + 1);
+                break;
+            case 6:
+                nodes =
+                    incomplete ? 6 + 9 * (order - 1) : (order + 1) * (order + 1) * (order + 2) / 2;
+                break;
+            case 7:
+                nodes = incomplete ? 5 + 8 * (order - 1)
+                                   : (order + 1) * (order + 2) * (2 * order + 3) / 6;
+                break;
             }
             result.push_back({type, nodes, dim});
             ++order;
@@ -62,13 +72,27 @@ std::vector<ExpectedElement> expected_elements()
     add_family({18, 111, 112, 113, 114, 115, 116, 117}, 2, 3, 6, true);
     add_family({7, 14, 118, 119, 120, 121, 122, 123, 124}, 1, 3, 7, false);
     add_family({19, 125, 126, 127, 128, 129, 130, 131}, 2, 3, 7, true);
-    const ExpectedElement special[] = {{15, 1, 0}, {67, 2, 1}, {68, 3, 2},
-        {70, 2, 1}, {84, 1, 1}, {85, 1, 2}, {86, 1, 2}, {87, 1, 3},
-        {88, 1, 3}, {89, 1, 3}, {132, 1, 3}, {133, 1, 0}, {134, 2, 1},
-        {135, 3, 2}, {136, 4, 3}, {140, 4, 3}};
+    const ExpectedElement special[] = {
+        {15, 1, 0},
+        {67, 2, 1},
+        {68, 3, 2},
+        {70, 2, 1},
+        {84, 1, 1},
+        {85, 1, 2},
+        {86, 1, 2},
+        {87, 1, 3},
+        {88, 1, 3},
+        {89, 1, 3},
+        {132, 1, 3},
+        {133, 1, 0},
+        {134, 2, 1},
+        {135, 3, 2},
+        {136, 4, 3},
+        {140, 4, 3}};
     result.insert(result.end(), std::begin(special), std::end(special));
-    std::sort(result.begin(), result.end(), [](const ExpectedElement& a,
-        const ExpectedElement& b) { return a.type < b.type; });
+    std::sort(result.begin(), result.end(), [](const ExpectedElement& a, const ExpectedElement& b) {
+        return a.type < b.type;
+    });
     return result;
 }
 
@@ -86,13 +110,13 @@ mshio::MshSpec element_fixture(const std::vector<ExpectedElement>& types)
     node_block.num_nodes_in_block = 1000;
     for (std::uint64_t tag = 1; tag <= 1000; ++tag) {
         node_block.tags.push_back(tag);
-        node_block.data.insert(node_block.data.end(),
+        node_block.data.insert(
+            node_block.data.end(),
             {static_cast<double>(tag), static_cast<double>(tag % 17), 0.25});
     }
     auto& elements = spec.elements;
     elements.num_entity_blocks = static_cast<std::uint64_t>(types.size());
-    elements.num_elements = elements.max_element_tag =
-        static_cast<std::uint64_t>(types.size()) * 2;
+    elements.num_elements = elements.max_element_tag = static_cast<std::uint64_t>(types.size()) * 2;
     elements.min_element_tag = 1;
     std::uint64_t tag = 1;
     for (const auto& type : types) {
@@ -104,8 +128,8 @@ mshio::MshSpec element_fixture(const std::vector<ExpectedElement>& types)
         for (size_t record = 0; record < 2; ++record) {
             block.data.push_back(tag++);
             for (size_t node = 0; node < type.nodes; ++node)
-                block.data.push_back(static_cast<std::uint64_t>(
-                    (node + record * 17) % type.nodes + 1));
+                block.data.push_back(
+                    static_cast<std::uint64_t>((node + record * 17) % type.nodes + 1));
         }
         elements.entity_blocks.push_back(std::move(block));
     }
@@ -118,8 +142,7 @@ void binary_value(std::ostream& out, T value)
     out.write(reinterpret_cast<const char*>(&value), sizeof(T));
 }
 
-std::string element_header(const char* version, int binary, std::int32_t type,
-    std::int32_t dim = 3)
+std::string element_header(const char* version, int binary, std::int32_t type, std::int32_t dim = 3)
 {
     // A deliberately incomplete record is enough: unsupported types/dimensions
     // must be rejected before the reader sizes or consumes connectivity.
@@ -137,14 +160,16 @@ std::string element_header(const char* version, int binary, std::int32_t type,
             binary_value(out, std::int32_t(1));
             binary_value(out, type);
             binary_value(out, std::uint64_t(1));
-        } else out << "1 1 1 1\n" << dim << " 1 " << type << " 1\n";
+        } else
+            out << "1 1 1 1\n" << dim << " 1 " << type << " 1\n";
     } else {
         out << "1\n";
         if (binary) {
             binary_value(out, type);
             binary_value(out, std::int32_t(1));
             binary_value(out, std::int32_t(0));
-        } else out << "1 " << type << " 0\n";
+        } else
+            out << "1 " << type << " 0\n";
     }
     return out.str();
 }
@@ -161,16 +186,22 @@ TEST_CASE("Every fixed-width released Gmsh type has exact metadata", "[elements]
         REQUIRE(mshio::get_element_dim(type.type) == type.dim);
     }
     for (std::int32_t type = 1; type <= 140; ++type) {
-        const auto match = std::find_if(types.begin(), types.end(),
-            [type](const ExpectedElement& entry) { return entry.type == type; });
+        const auto match =
+            std::find_if(types.begin(), types.end(), [type](const ExpectedElement& entry) {
+                return entry.type == type;
+            });
         if (match == types.end()) {
             INFO("Rejected MSH type " << type);
             REQUIRE_THROWS_AS(mshio::nodes_per_element(type), mshio::UnsupportedFeature);
             REQUIRE_THROWS_AS(mshio::get_element_dim(type), mshio::UnsupportedFeature);
         }
     }
-    for (auto type : {std::numeric_limits<std::int32_t>::min(), -1, 0, 141,
-             std::numeric_limits<std::int32_t>::max()}) {
+    for (auto type :
+         {std::numeric_limits<std::int32_t>::min(),
+          -1,
+          0,
+          141,
+          std::numeric_limits<std::int32_t>::max()}) {
         INFO("Out-of-range MSH type " << type);
         REQUIRE_THROWS_AS(mshio::nodes_per_element(type), mshio::UnsupportedFeature);
         REQUIRE_THROWS_AS(mshio::get_element_dim(type), mshio::UnsupportedFeature);

@@ -1,7 +1,7 @@
 #include "load_msh_format.h"
-#include "io_utils.h"
 #include <mshio/MshSpec.h>
 #include <mshio/exception.h>
+#include "io_utils.h"
 
 namespace mshio {
 void load_mesh_format(std::istream& in, MshSpec& spec)
@@ -21,8 +21,10 @@ void load_mesh_format(std::istream& in, MshSpec& spec)
         std::int32_t one = 0;
         eat_white_space(in);
         read_binary(in, &one);
-        if (one == 0x01000000) input_byte_swap(in) = 1;
-        else if (one != 1) throw InvalidFormat("Invalid MSH binary byte-order marker");
+        if (one == 0x01000000)
+            input_byte_swap(in) = 1;
+        else if (one != 1)
+            throw InvalidFormat("Invalid MSH binary byte-order marker");
     }
 }
 } // namespace mshio

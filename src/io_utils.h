@@ -69,7 +69,8 @@ template <typename T>
 void reserve_next(std::vector<T>& values, size_t total, size_t needed = 1)
 {
     if (values.capacity() - values.size() >= needed) return;
-    const auto ahead = std::max(values.size(), std::max<size_t>(1, max_speculative_bytes / sizeof(T)));
+    const auto ahead =
+        std::max(values.size(), std::max<size_t>(1, max_speculative_bytes / sizeof(T)));
     values.reserve(values.size() + std::max(needed, std::min(total - values.size(), ahead)));
 }
 
@@ -110,11 +111,10 @@ typename std::enable_if<std::is_integral<T>::value>::type read_ascii(std::istrea
         in.get();
         ch = in.peek();
     }
-    if (negative && !std::is_signed<T>::value)
-        throw InvalidFormat("Negative unsigned MSH field");
+    if (negative && !std::is_signed<T>::value) throw InvalidFormat("Negative unsigned MSH field");
     if (ch < '0' || ch > '9') throw InvalidFormat("Invalid or truncated MSH integer");
-    const auto limit = static_cast<std::uint64_t>(std::numeric_limits<T>::max()) +
-        (negative ? 1u : 0u);
+    const auto limit =
+        static_cast<std::uint64_t>(std::numeric_limits<T>::max()) + (negative ? 1u : 0u);
     std::uint64_t magnitude = 0;
     do {
         const auto digit = static_cast<unsigned>(ch - '0');
@@ -127,8 +127,8 @@ typename std::enable_if<std::is_integral<T>::value>::type read_ascii(std::istrea
     if (ch != std::char_traits<char>::eof() && !std::isspace(static_cast<unsigned char>(ch)))
         throw InvalidFormat("Invalid MSH integer token");
     if (negative) {
-        value = magnitude == limit ? std::numeric_limits<T>::min() :
-            static_cast<T>(-static_cast<std::int64_t>(magnitude));
+        value = magnitude == limit ? std::numeric_limits<T>::min()
+                                   : static_cast<T>(-static_cast<std::int64_t>(magnitude));
     } else {
         value = static_cast<T>(magnitude);
     }
@@ -185,8 +185,10 @@ void write_binary(std::ostream& out, const T* values, std::uint64_t count = 1)
 template <typename T>
 void read_field(std::istream& in, T& value, bool binary)
 {
-    if (binary) read_binary(in, &value);
-    else read_ascii(in, value);
+    if (binary)
+        read_binary(in, &value);
+    else
+        read_ascii(in, value);
 }
 
 template <typename T>

@@ -20,8 +20,7 @@ void validate_curve(const CurveParametrization& curve)
     if (curve.tag <= 0) throw InvalidFormat("Invalid parametrized curve tag");
     const auto count = checked_product(curve.num_nodes, 4);
     checked_bytes(count, sizeof(double));
-    if (curve.data.size() != count)
-        throw InvalidFormat("Inconsistent curve parametrization size");
+    if (curve.data.size() != count) throw InvalidFormat("Inconsistent curve parametrization size");
 }
 
 void validate_surface(const SurfaceParametrization& surface)
@@ -49,8 +48,8 @@ void validate_scheme(const InterpolationScheme& scheme)
             throw InvalidFormat("Invalid interpolation element topology");
         checked_int32(topology.matrices.size());
         for (const auto& matrix : topology.matrices) {
-            const auto count = checked_product(nonnegative(matrix.num_rows),
-                nonnegative(matrix.num_columns));
+            const auto count =
+                checked_product(nonnegative(matrix.num_rows), nonnegative(matrix.num_columns));
             checked_bytes(count, sizeof(double));
             if (matrix.data.size() != count)
                 throw InvalidFormat("Inconsistent interpolation matrix size");
@@ -69,13 +68,18 @@ void require_section_boundary(std::istream& in)
 template <typename T>
 void write_field(std::ostream& out, T value, bool binary)
 {
-    if (binary) write_binary(out, &value);
-    else out << value << '\n';
+    if (binary)
+        write_binary(out, &value);
+    else
+        out << value << '\n';
 }
 
 template <typename T>
-void write_values(std::ostream& out, const std::vector<T>& values,
-    std::uint64_t stride, bool binary)
+void write_values(
+    std::ostream& out,
+    const std::vector<T>& values,
+    std::uint64_t stride,
+    bool binary)
 {
     if (binary) {
         write_binary(out, values.data(), values.size());
@@ -102,8 +106,7 @@ void validate_extra_sections(const MshSpec& spec)
 
 void load_parametrizations(std::istream& in, MshSpec& spec)
 {
-    if (spec.mesh_format.version != "4.1")
-        throw InvalidFormat("Parametrizations require MSH 4.1");
+    if (spec.mesh_format.version != "4.1") throw InvalidFormat("Parametrizations require MSH 4.1");
     const bool binary = spec.mesh_format.file_type > 0;
     if (binary) eat_white_space(in, 1);
     std::uint64_t num_curves, num_surfaces;
@@ -147,8 +150,11 @@ void load_interpolation_scheme(std::istream& in, MshSpec& spec)
         read_records(topology.matrices, nonnegative(matrices), [&](InterpolationMatrix& matrix) {
             read_ascii(in, matrix.num_rows);
             read_ascii(in, matrix.num_columns);
-            read_values(in, matrix.data, checked_product(nonnegative(matrix.num_rows),
-                nonnegative(matrix.num_columns)), false);
+            read_values(
+                in,
+                matrix.data,
+                checked_product(nonnegative(matrix.num_rows), nonnegative(matrix.num_columns)),
+                false);
         });
     });
     validate_scheme(scheme);

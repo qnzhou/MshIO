@@ -47,10 +47,8 @@ MshSpec fixture()
     surface.tag = 31;
     surface.num_nodes = 3;
     surface.num_triangles = 1;
-    surface.data = {
-        0., 0., 0., 0., 0., 1., 2., 3., 4., 5., 6.,
-        2., 0., 0., 1., 0., 7., 8., 9., 10., 11., 12.,
-        0., 2., 0., 0., 1., 13., 14., 15., 16., 17., 18.};
+    surface.data = {0., 0., 0.,  0.,  0.,  1., 2., 3., 4., 5., 6.,  2.,  0.,  0.,  1.,  0., 7.,
+                    8., 9., 10., 11., 12., 0., 2., 0., 0., 1., 13., 14., 15., 16., 17., 18.};
     surface.triangle_indices = {0, 2, 1};
     spec.parametrizations.surfaces.push_back(surface);
     InterpolationMatrix matrix;
@@ -139,14 +137,16 @@ TEST_CASE("Extra sections preserve full records without mesh data", "[extra_sect
             save_msh(out, spec);
             const auto text = out.str();
             REQUIRE(text.find("$InterpolationScheme") < text.find("$ElementNodeData"));
-            REQUIRE(text.find("\"second basis\"\n1\n10\n3\n2 3\n1 0 0\n-1 2 0.5\n") !=
+            REQUIRE(
+                text.find("\"second basis\"\n1\n10\n3\n2 3\n1 0 0\n-1 2 0.5\n") !=
                 std::string::npos);
             const auto loaded = parse(text);
             require_equal(spec, loaded);
             REQUIRE(loaded.nodes.entity_blocks.empty());
             REQUIRE(loaded.elements.entity_blocks.empty());
             REQUIRE(loaded.element_node_data.size() == 1);
-            REQUIRE(loaded.element_node_data[0].header.string_tags ==
+            REQUIRE(
+                loaded.element_node_data[0].header.string_tags ==
                 spec.element_node_data[0].header.string_tags);
             REQUIRE(loaded.element_node_data[0].entries[0].tag == 93);
             REQUIRE(loaded.element_node_data[0].entries[0].num_nodes_per_element == 2);
@@ -177,9 +177,9 @@ TEST_CASE("Parametrizations read independent fixed width wire records", "[extra_
             wire << '\n';
         } else {
             wire << "1 1\n12 2\n0 0 0 -1\n2 0 0 3\n31 3 1\n"
-                "0 0 0 0 0 1 2 3 4 5 6\n"
-                "2 0 0 1 0 7 8 9 10 11 12\n"
-                "0 2 0 0 1 13 14 15 16 17 18\n0 2 1\n";
+                    "0 0 0 0 0 1 2 3 4 5 6\n"
+                    "2 0 0 1 0 7 8 9 10 11 12\n"
+                    "0 2 0 0 1 13 14 15 16 17 18\n0 2 1\n";
         }
         wire << "$EndParametrizations\n";
         auto comparison = expected;
@@ -237,8 +237,11 @@ TEST_CASE("Malformed extra section counts and boundaries are rejected", "[extra_
         "0 0\n12 0\n",
         "-1 0\n"};
     for (const auto& body : parametrizations)
-        REQUIRE_THROWS_AS(parse(mesh_header("4.1", false) + "$Parametrizations\n" + body +
-            "$EndParametrizations\n"), InvalidFormat);
+        REQUIRE_THROWS_AS(
+            parse(
+                mesh_header("4.1", false) + "$Parametrizations\n" + body +
+                "$EndParametrizations\n"),
+            InvalidFormat);
     const std::vector<std::string> schemes = {
         "\"x\"\n-1\n",
         "\"x\"\n1\n3 -1\n",
@@ -250,8 +253,11 @@ TEST_CASE("Malformed extra section counts and boundaries are rejected", "[extra_
     for (const auto& version : {"2.2", "4.1"})
         for (bool binary : {false, true})
             for (const auto& body : schemes)
-                REQUIRE_THROWS_AS(parse(mesh_header(version, binary) +
-                    "$InterpolationScheme\n" + body + "$EndInterpolationScheme\n"), InvalidFormat);
+                REQUIRE_THROWS_AS(
+                    parse(
+                        mesh_header(version, binary) + "$InterpolationScheme\n" + body +
+                        "$EndInterpolationScheme\n"),
+                    InvalidFormat);
     std::ostringstream truncated;
     truncated << mesh_header("4.1", true) << "$Parametrizations\n";
     append_binary(truncated, std::uint64_t(1));

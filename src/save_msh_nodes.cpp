@@ -1,6 +1,6 @@
 #include "save_msh_nodes.h"
-#include "io_utils.h"
 #include <mshio/MshSpec.h>
+#include "io_utils.h"
 
 namespace mshio {
 void save_nodes(std::ostream& out, const MshSpec& spec)
@@ -21,7 +21,8 @@ void save_nodes(std::ostream& out, const MshSpec& spec)
         checked_bytes(block.tags.size(), sizeof(std::uint64_t));
         checked_bytes(block.data.size(), sizeof(double));
         total = checked_sum(total, block.num_nodes_in_block);
-        if (!v41) for (auto tag : block.tags) checked_int32(tag);
+        if (!v41)
+            for (auto tag : block.tags) checked_int32(tag);
     }
     if (total != nodes.num_nodes) throw InvalidFormat("Inconsistent MSH node count");
     if (!v41) checked_int32(nodes.num_nodes);
@@ -32,9 +33,10 @@ void save_nodes(std::ostream& out, const MshSpec& spec)
         write_binary(out, &nodes.min_node_tag);
         write_binary(out, &nodes.max_node_tag);
     } else if (v41) {
-        out << nodes.num_entity_blocks << ' ' << nodes.num_nodes << ' '
-            << nodes.min_node_tag << ' ' << nodes.max_node_tag << '\n';
-    } else out << nodes.num_nodes << '\n';
+        out << nodes.num_entity_blocks << ' ' << nodes.num_nodes << ' ' << nodes.min_node_tag << ' '
+            << nodes.max_node_tag << '\n';
+    } else
+        out << nodes.num_nodes << '\n';
     for (const auto& block : nodes.entity_blocks) {
         const auto stride = node_stride(block.entity_dim, block.parametric);
         if (v41 && binary) {
@@ -46,8 +48,8 @@ void save_nodes(std::ostream& out, const MshSpec& spec)
             write_binary(out, block.data.data(), block.data.size());
         } else {
             if (v41) {
-                out << block.entity_dim << ' ' << block.entity_tag << ' ' << block.parametric
-                    << ' ' << block.num_nodes_in_block << '\n';
+                out << block.entity_dim << ' ' << block.entity_tag << ' ' << block.parametric << ' '
+                    << block.num_nodes_in_block << '\n';
                 for (auto tag : block.tags) out << tag << '\n';
             }
             for (size_t i = 0; i < block.tags.size(); ++i) {

@@ -21,4 +21,3 @@ void eat_white_space(std::istream& in, size_t count)
 }
 
 } // namespace mshio
-

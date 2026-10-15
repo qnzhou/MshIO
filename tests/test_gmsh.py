@@ -1,5 +1,6 @@
 """Independent loader checks; install with pip install '.[test]' to enable."""
 
+import math
 from pathlib import Path
 import tempfile
 import unittest
@@ -125,6 +126,88 @@ class GmshLoaderTests(unittest.TestCase):
                     np.testing.assert_array_equal(
                         gmsh.model.getEntitiesForPhysicalGroup(2, 99), [2]
                     )
+
+    def test_floating_point_output_matches_gmsh_writer(self):
+        values = [1.2345678901234567, math.pi, math.nextafter(1.0, 2.0),
+                  0.1, 1.2345678901234567e-120, 1.2345678901234567e120]
+        time = 0.12345678901234567
+        coordinates = np.zeros((6, 3))
+        coordinates[:, 0] = values
+        datasets = [
+            ("NodeData", list(range(1, 7)), [[value] for value in values], 1),
+            ("ElementData", [1, 2], [values[:3], values[3:]], 3),
+            ("ElementNodeData", [1, 2], [values[:4], values[2:]], 1),
+        ]
+
+        # Produce independent expected files with Gmsh's own writer, not a
+        # Python reimplementation of its floating-point formatting.
+        gmsh.model.add("precision")
+        gmsh.model.addDiscreteEntity(2, 2)
+        gmsh.model.mesh.addNodes(2, 2, list(range(1, 7)), coordinates.ravel())
+        gmsh.model.mesh.addElementsByType(2, 3, [1, 2], [1, 2, 3, 4, 2, 5, 6, 3])
+        views = []
+        for kind, tags, entries, components in datasets:
+            view = gmsh.view.add(kind)
+            gmsh.view.addModelData(view, 0, "precision", kind, tags, entries, time, components)
+            gmsh.view.setInterpolationMatrices(view, "Quadrangle", -1, [], [])
+            views.append(view)
+        gmsh.option.setNumber("Mesh.SaveAll", 1)
+        gmsh.option.setNumber("PostProcessing.SaveMesh", 0)
+
+        spec = mshio.load_msh(str(DATA_DIR / "test_2.2_ascii.msh"))
+        block = spec.nodes.entity_blocks[0]
+        block.data = coordinates.ravel()
+        spec.nodes.entity_blocks[0] = block
+        spec.node_data.clear()
+        for kind, tags, entries, components in datasets:
+            data = mshio.Data()
+            data.header.string_tags = [kind]
+            data.header.real_tags = [time]
+            data.header.int_tags = [0, components, len(tags)]
+            for tag, entry_values in zip(tags, entries):
+                entry = mshio.DataEntry()
+                entry.tag = tag
+                entry.data = entry_values
+                if kind == "ElementNodeData":
+                    entry.num_nodes_per_elements = 4
+                data.entries.append(entry)
+            getattr(spec, {"NodeData": "node_data", "ElementData": "element_data",
+                           "ElementNodeData": "element_node_data"}[kind]).append(data)
+
+        def snapshot(path):
+            gmsh.clear()
+            gmsh.open(str(path))
+            tags, xyz, _ = gmsh.model.mesh.getNodes()
+            nodes = sorted((int(tag), tuple(point))
+                           for tag, point in zip(tags, xyz.reshape(-1, 3)))
+            data = {}
+            for view in gmsh.view.getTags():
+                kind, tags, entries, timestamp, components = gmsh.view.getModelData(int(view), 0)
+                data[kind] = (timestamp, components,
+                              sorted((int(tag), tuple(entry))
+                                     for tag, entry in zip(tags, entries)))
+            return nodes, data
+
+        with tempfile.TemporaryDirectory() as directory:
+            for version in ("2.2", "4.1"):
+                for encoding in (0, 1):
+                    gmsh.option.setNumber("Mesh.MshFileVersion", float(version))
+                    gmsh.option.setNumber("Mesh.Binary", encoding)
+                    reference = Path(directory) / f"reference-{version}-{encoding}.msh"
+                    gmsh.write(str(reference))
+                    for view in views:
+                        gmsh.view.write(view, str(reference), True)
+
+            for version in ("2.2", "4.1"):
+                for encoding in (0, 1):
+                    with self.subTest(version=version, encoding=encoding):
+                        reference = Path(directory) / f"reference-{version}-{encoding}.msh"
+                        expected = snapshot(reference)
+                        spec.mesh_format.version = version
+                        spec.mesh_format.file_type = encoding
+                        actual = Path(directory) / "mshio.msh"
+                        mshio.save_msh(str(actual), spec)
+                        self.assertEqual(snapshot(actual), expected)
 
 
 if __name__ == "__main__":

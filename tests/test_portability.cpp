@@ -458,3 +458,84 @@ TEST_CASE("save_msh reports a failure deferred until stream synchronization", "[
     std::ostream out(&buffer);
     REQUIRE_THROWS_AS(save_msh(out, spec), InvalidFormat);
 }
+
+TEST_CASE("MSH ASCII doubles match Gmsh precision without changing stream formatting",
+    "[io][portability][precision]")
+{
+    const double value = 1.2345678901234567;
+    const double small = 1.2345678901234567e-120;
+    const double large = 1.2345678901234567e120;
+    const double time = 0.12345678901234567;
+    const std::vector<double> original = {value, small, large};
+    const std::vector<double> rounded = {
+        1.234567890123457, 1.234567890123457e-120, 1.234567890123457e120};
+    MshSpec spec;
+    spec.nodes = {1, 2, 1, 2, {{1, 1, 1, 2, {1, 2},
+        {value, small, large, value, 2, 0, 0, 1.0000000000000002}}}};
+    spec.elements = {1, 1, 1, 1, {{1, 1, 1, 1, {1, 1, 2}}}};
+    spec.entities.points = {{1, value, small, large, {}}};
+    spec.entities.curves = {{1, small, 0, 0, large, value, 0, {}, {}}};
+    Data data;
+    data.header = {{"precision"}, {time}, {0, 3, 1}};
+    data.entries = {{1, 0, original}};
+    spec.node_data = {data};
+    spec.element_data = {data};
+    data.entries[0].num_nodes_per_element = 2;
+    data.entries[0].data.insert(data.entries[0].data.end(), original.begin(), original.end());
+    spec.element_node_data = {data};
+    validate_spec(spec);
+
+    for (const auto* version : {"2.2", "4.1"}) {
+        for (std::int32_t encoding : {0, 1}) {
+            CAPTURE(version, encoding);
+            spec.mesh_format.version = version;
+            spec.mesh_format.file_type = encoding;
+            for (const auto format : {std::ios_base::fixed, std::ios_base::scientific}) {
+                std::ostringstream out;
+                out.setf(format, std::ios_base::floatfield);
+                out.precision(3);
+                const auto flags = out.flags();
+                save_msh(out, spec);
+                REQUIRE(out.precision() == 3);
+                REQUIRE(out.flags() == flags);
+                std::istringstream in(out.str());
+                const auto loaded = load_msh(in);
+                validate_spec(loaded);
+                const auto& expected = encoding == 0 ? rounded : original;
+                const auto& coordinates = loaded.nodes.entity_blocks.front().data;
+                REQUIRE(coordinates[0] == expected[0]);
+                REQUIRE(coordinates[1] == expected[1]);
+                REQUIRE(coordinates[2] == expected[2]);
+                if (spec.mesh_format.version == "4.1") {
+                    REQUIRE(coordinates[3] == expected[0]);
+                    REQUIRE(coordinates[7] == (encoding == 0 ? 1.0 : 1.0000000000000002));
+                    REQUIRE(loaded.entities.points[0].x == expected[0]);
+                    REQUIRE(loaded.entities.points[0].y == expected[1]);
+                    REQUIRE(loaded.entities.points[0].z == expected[2]);
+                    REQUIRE(loaded.entities.curves[0].min_x == expected[1]);
+                    REQUIRE(loaded.entities.curves[0].max_x == expected[2]);
+                }
+                for (const auto* dataset : {&loaded.node_data[0], &loaded.element_data[0],
+                    &loaded.element_node_data[0]}) {
+                    // Dataset headers stay ASCII even in binary MSH files.
+                    REQUIRE(dataset->header.real_tags[0] == 0.1234567890123457);
+                    const auto& values = dataset->entries[0].data;
+                    for (size_t i = 0; i < values.size(); ++i)
+                        REQUIRE(values[i] == expected[i % expected.size()]);
+                }
+            }
+        }
+    }
+}
+
+TEST_CASE("Failed MSH writes restore caller floating-point formatting", "[io][precision]")
+{
+    MshSpec spec;
+    spec.nodes = {1, 1, 1, 1, {{0, 1, 0, 1, {1}, {}}}};
+    std::ostringstream out;
+    out << std::scientific << std::setprecision(9);
+    const auto flags = out.flags();
+    REQUIRE_THROWS_AS(save_msh(out, spec), InvalidFormat);
+    REQUIRE(out.precision() == 9);
+    REQUIRE(out.flags() == flags);
+}

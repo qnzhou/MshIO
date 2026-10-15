@@ -18,6 +18,21 @@ namespace mshio {
 
 void save_msh(std::ostream& out, const MshSpec& spec)
 {
+    // Gmsh writes ASCII doubles with %.16g, including headers in binary files.
+    // Keep this local to the write so caller formatting survives errors too.
+    struct RestoreFormat {
+        std::ostream& stream;
+        std::streamsize precision;
+        std::ios_base::fmtflags flags;
+        ~RestoreFormat()
+        {
+            stream.precision(precision);
+            stream.flags(flags);
+        }
+    } restore{out, out.precision(), out.flags()};
+    out.precision(16);
+    out.setf(std::ios_base::fmtflags(0), std::ios_base::floatfield);
+
     save_mesh_format(out, spec);
     if (spec.physical_groups.size() > 0) {
         save_physical_groups(out, spec);
